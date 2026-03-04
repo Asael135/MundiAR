@@ -412,56 +412,56 @@
     
     <a-entity camera position="0 0 0" look-controls="enabled: false"></a-entity>
     
-    <!-- LUCES MEJORADAS PARA MATERIALES DE ORO (más intensidad) -->
+    <!-- LUCES -->
     <a-light type="ambient" color="#FFFFFF" intensity="1.0"></a-light>
     <a-light type="directional" color="#FFFFFF" intensity="2.0" position="2 3 2"></a-light>
     <a-light type="directional" color="#FFF5E6" intensity="2.0" position="-2 2 -2"></a-light>
     <a-light type="point" color="#FFD700" intensity="1.5" position="1 2 1"></a-light>
     <a-light type="point" color="#FFAA00" intensity="1.2" position="-1 1 -1"></a-light>
     
-    <!-- MARCADORES CON MODELO base.glb (ESCALA AUMENTADA a 1.5 para que se vea más grande) -->
-    <!-- NOTA: Los modelos de estadio y copa ahora se cargarán UNA SOLA VEZ y se reutilizarán -->
-    <a-marker id="marker-ARG" type="pattern" url="./assets/arg/arg.patt" size="0.15" smooth="true" smoothCount="5" smoothTolerance="0.05" emitevents="true">
-        <a-entity id="model-ARG" class="ar-model" data-pais="ARG" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    <!-- MARCADORES -->
+    
+    <a-marker id="marker-ARG" type="pattern" url="assets/arg/arg.patt" size="0.15" smooth="true" smoothCount="5" smoothTolerance="0.05" emitevents="true">
+        <a-entity id="model-ARG" class="ar-model" data-pais="ARG" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
     </a-marker>
 
-    <a-marker id="marker-COL" type="pattern" url="./assets/col/col.patt" size="0.15" smooth="true" emitevents="true">
-        <a-entity id="model-COL" class="ar-model" data-pais="COL" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    <a-marker id="marker-COL" type="pattern" url="assets/col/col.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-COL" class="ar-model" data-pais="COL" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
     </a-marker>
 
-    <a-marker id="marker-ESP" type="pattern" url="./assets/esp/esp.patt" size="0.15" smooth="true" emitevents="true">
-        <a-entity id="model-ESP" class="ar-model" data-pais="ESP" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    <a-marker id="marker-ESP" type="pattern" url="assets/esp/esp.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-ESP" class="ar-model" data-pais="ESP" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
     </a-marker>
 
-    <a-marker id="marker-FRA" type="pattern" url="./assets/fra/fra.patt" size="0.15" smooth="true" emitevents="true">
-        <a-entity id="model-FRA" class="ar-model" data-pais="FRA" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    <a-marker id="marker-FRA" type="pattern" url="assets/fra/fra.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-FRA" class="ar-model" data-pais="FRA" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
     </a-marker>
 
-    <a-marker id="marker-JPN" type="pattern" url="./assets/jpn/jpn.patt" size="0.15" smooth="true" emitevents="true">
-        <a-entity id="model-JPN" class="ar-model" data-pais="JPN" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    <a-marker id="marker-JPN" type="pattern" url="assets/jpn/jpn.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-JPN" class="ar-model" data-pais="JPN" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
     </a-marker>
 
-    <a-marker id="marker-KOR" type="pattern" url="./assets/kor/kor.patt" size="0.15" smooth="true" emitevents="true">
-        <a-entity id="model-KOR" class="ar-model" data-pais="KOR" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    <a-marker id="marker-KOR" type="pattern" url="assets/kor/kor.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-KOR" class="ar-model" data-pais="KOR" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
     </a-marker>
 
-    <a-marker id="marker-MEX" type="pattern" url="./assets/mex/mex.patt" size="0.15" smooth="true" emitevents="true">
-        <a-entity id="model-MEX" class="ar-model" data-pais="MEX" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    <a-marker id="marker-MEX" type="pattern" url="assets/mex/mex.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-MEX" class="ar-model" data-pais="MEX" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
     </a-marker>
 
-    <a-marker id="marker-POR" type="pattern" url="./assets/por/por.patt" size="0.15" smooth="true" emitevents="true">
-        <a-entity id="model-POR" class="ar-model" data-pais="POR" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    <a-marker id="marker-POR" type="pattern" url="assets/por/por.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-POR" class="ar-model" data-pais="POR" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
     </a-marker>
 
-    <a-marker id="marker-TUN" type="pattern" url="./assets/tun/tun.patt" size="0.15" smooth="true" emitevents="true">
-        <a-entity id="model-TUN" class="ar-model" data-pais="TUN" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    <a-marker id="marker-TUN" type="pattern" url="assets/tun/tun.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-TUN" class="ar-model" data-pais="TUN" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
     </a-marker>
 
-    <a-marker id="marker-URY" type="pattern" url="./assets/ury/ury.patt" size="0.15" smooth="true" emitevents="true">
-        <a-entity id="model-URY" class="ar-model" data-pais="URY" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    <a-marker id="marker-URY" type="pattern" url="assets/ury/ury.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-URY" class="ar-model" data-pais="URY" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
     </a-marker>
 
-    <!-- Contenedores ÚNICOS para estadio y copa (se reutilizan para todos los países) -->
+    <!-- MODELOS ÚNICOS -->
     <a-entity id="estadio-unico" class="estadio-model" gltf-model="" position="0 0 0" scale="0.4 0.4 0.4" visible="false"></a-entity>
     <a-entity id="copa-unica" class="copa-model" gltf-model="" position="0 0 0" scale="0.3 0.3 0.3" visible="false" rotation="0 45 0"></a-entity>
 
