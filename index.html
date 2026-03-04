@@ -1,0 +1,1886 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>MundiAR - Realidad Aumentada</title>
+    
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.0/aframe/build/aframe-ar.js"></script>
+
+    <!-- Three.js addons para EffectComposer/Bloom (misma versión que usa A-Frame 1.4) -->
+    <script src="https://unpkg.com/three@0.146.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://unpkg.com/three@0.146.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://unpkg.com/three@0.146.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://unpkg.com/three@0.146.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://unpkg.com/three@0.146.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://unpkg.com/three@0.146.0/examples/js/shaders/CopyShader.js"></script>
+
+    <style>
+        :root { --accent: #b2ff24; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; }
+        body { background: #111; color: white; overflow: hidden; }
+
+        .screen { position: fixed; inset: 0; display: none; z-index: 10; }
+        .screen.active { display: flex; justify-content: center; align-items: center; flex-direction: column; animation: screenAppear 0.5s ease; }
+        @keyframes screenAppear { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        .scan-box { width: 220px; height: 220px; border: 3px solid var(--accent); border-radius: 20px; animation: pulse 2s infinite; }
+        .scan-text { margin-top: 20px; font-size: 22px; color: var(--accent); }
+        @keyframes pulse { 0% { box-shadow: 0 0 6px var(--accent); } 50% { box-shadow: 0 0 20px var(--accent); } 100% { box-shadow: 0 0 6px var(--accent); } }
+
+        .top-bar { position: absolute; top: 10px; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; animation: slideDown 0.4s ease; z-index: 25; }
+        @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        #screenTitle { padding: 8px 25px; border-radius: 20px; font-size: 18px; background: var(--accent); color: black; transition: transform 0.2s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+        #screenTitle:hover { transform: scale(1.05); }
+
+        .nav-btn { background: var(--accent); border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; color: black; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.3s ease; flex-shrink: 0; }
+        .nav-btn:hover { transform: scale(1.1); box-shadow: 0 0 15px var(--accent); }
+        .nav-btn:active { transform: scale(0.9); }
+
+        .content-area { flex: 1; width: 100%; }
+
+        .menu-btn { position: absolute; bottom: 20px; right: 20px; background: var(--accent); border: none; border-radius: 50%; width: 55px; height: 55px; font-size: 22px; color: black; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.3s ease; z-index: 30; }
+        .menu-btn:hover { transform: scale(1.1) rotate(90deg); box-shadow: 0 0 20px var(--accent); }
+
+        .filter-menu { position: absolute; left: 0; right: 0; bottom: -300px; height: 300px; background: rgba(0,0,0,0.96); border-top-left-radius: 28px; border-top-right-radius: 28px; transition: bottom 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); display: flex; flex-direction: column; align-items: center; padding-top: 25px; z-index: 40; backdrop-filter: blur(10px); }
+        .filter-menu.active { bottom: 0; }
+
+        .close-menu { position: absolute; top: 10px; right: 15px; background: var(--accent); border: none; width: 28px; height: 28px; border-radius: 50%; font-size: 14px; color: black; cursor: pointer; transition: transform 0.2s ease; }
+        .close-menu:hover { transform: rotate(90deg); }
+
+        .filter-track { margin-top: 60px; display: flex; gap: 15px; overflow-x: auto; padding: 10px 20px 30px 20px; width: 100%; scroll-snap-type: x mandatory; align-items: center; }
+        .filter-track::-webkit-scrollbar { display: none; }
+
+        .filter { min-width: 70px; height: 70px; border-radius: 50%; background: var(--accent); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; color: black; border: 4px solid transparent; transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; cursor: pointer; }
+        .filter:hover { transform: scale(1.1); }
+        .filter.active { border-color: white; box-shadow: 0 0 20px var(--accent); transform: scale(1.15); animation: filterPulse 2s infinite; }
+        @keyframes filterPulse { 0% { box-shadow: 0 0 10px var(--accent); } 50% { box-shadow: 0 0 25px var(--accent); } 100% { box-shadow: 0 0 10px var(--accent); } }
+
+        .screen-overlay { 
+            position: absolute; 
+            top: 80px; 
+            left: 15px; 
+            right: 15px; 
+            padding: 20px; 
+            background: rgba(0,0,0,0.8); 
+            border: 2px solid var(--accent); 
+            border-radius: 15px; 
+            text-align: center; 
+            font-size: 16px; 
+            backdrop-filter: blur(10px); 
+            z-index: 15; 
+            animation: overlayAppear 0.4s ease;
+            max-height: calc(100vh - 250px);
+            overflow-y: auto;
+        }
+        .screen-overlay:hover { box-shadow: 0 0 20px var(--accent); }
+        @keyframes overlayAppear { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .context-buttons { 
+            position: absolute; 
+            bottom: 90px; 
+            left: 0; 
+            right: 0; 
+            display: flex; 
+            justify-content: center; 
+            gap: 15px; 
+            z-index: 20; 
+            animation: buttonsAppear 0.5s ease;
+            flex-wrap: wrap;
+            padding: 0 15px;
+        }
+        @keyframes buttonsAppear { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .context-btn { 
+            background: var(--accent); 
+            border: none; 
+            padding: 12px 20px; 
+            border-radius: 30px; 
+            font-size: 14px; 
+            color: black; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+            min-width: 110px;
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .context-btn:hover { transform: scale(1.05); box-shadow: 0 0 15px var(--accent); }
+        .context-btn:active { transform: scale(0.95); }
+
+        .popup { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(5px); }
+        .popup.active { display: flex; animation: popupFadeIn 0.3s ease; }
+        @keyframes popupFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .popup-content { background: #111; border: 2px solid var(--accent); padding: 30px; border-radius: 20px; text-align: center; width: 100%; max-width: 400px; margin: 0 20px; animation: popupScale 0.3s ease; }
+        @keyframes popupScale { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        #closePopup { background: var(--accent); border: none; padding: 10px 20px; border-radius: 20px; margin-top: 15px; cursor: pointer; font-weight: bold; transition: transform 0.2s ease; }
+        #closePopup:hover { transform: scale(1.05); }
+
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; transition: opacity 0.5s ease; }
+        .loader { width: 60px; height: 60px; border: 4px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: var(--accent); animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-info { margin-top: 20px; font-size: 14px; color: #aaa; text-align: center; }
+
+        .debug-panel { position: fixed; top: 20px; right: 20px; background: rgba(0,0,0,0.95); color: #0f0; padding: 15px; border-radius: 5px; font-family: 'Courier New', monospace; font-size: 12px; z-index: 1000; display: none; max-width: 300px; pointer-events: none; border: 1px solid #0f0; }
+        .debug-panel.show { display: block; }
+
+        .instructions { position: fixed; bottom: 10px; left: 0; width: 100%; text-align: center; color: white; background: rgba(0,0,0,0.7); padding: 8px; z-index: 5; font-size: 11px; pointer-events: none; backdrop-filter: blur(5px); }
+
+        .error-message { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 50, 50, 0.95); color: white; padding: 20px; border-radius: 10px; z-index: 10000; text-align: center; display: none; }
+        .error-message.show { display: block; }
+        .reload-btn { margin-top: 10px; padding: 10px 20px; background: white; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
+
+        .a-scene { position: fixed !important; inset: 0 !important; z-index: 1 !important; }
+        .screen.active { pointer-events: auto; }
+        .context-buttons, .menu-btn, .filter-menu, .nav-btn, #closePopup, .reload-btn { pointer-events: auto; }
+
+        /* Fireworks button - responsive */
+        .fireworks-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: var(--accent);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 30px;
+            font-size: 14px;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
+            z-index: 25;
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        @media (min-width: 768px) {
+            .fireworks-btn { padding: 12px 20px; font-size: 15px; }
+        }
+        .fireworks-btn:hover { transform: scale(1.05); box-shadow: 0 0 20px var(--accent); }
+        .fireworks-btn:active { transform: scale(0.95); }
+
+        /* Seed selector - responsive */
+        .seed-selector {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            display: flex;
+            gap: 8px;
+            z-index: 25;
+            animation: buttonsAppear 0.4s ease;
+            flex-wrap: wrap;
+            max-width: 200px;
+        }
+        .seed-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.4);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        @media (min-width: 768px) {
+            .seed-btn { width: 35px; height: 35px; }
+        }
+        .seed-btn.active-seed {
+            border-color: white;
+            transform: scale(1.15);
+            box-shadow: 0 0 12px currentColor;
+        }
+
+        /* Trivia / Galería mejorado */
+        .trivia-container { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.98); 
+            z-index: 2000; 
+            display: none; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 15px; 
+        }
+        .trivia-container.active { display: flex; }
+        .trivia-container .trivia-content { 
+            background: linear-gradient(145deg, #1a1a1a, #111);
+            border: 2px solid var(--accent); 
+            border-radius: 25px; 
+            padding: 20px; 
+            max-width: 600px; 
+            width: 100%; 
+            max-height: 85vh; 
+            overflow-y: auto; 
+            box-shadow: 0 0 30px rgba(178, 255, 36, 0.2);
+        }
+        .trivia-question { font-size: 18px; margin-bottom: 20px; line-height: 1.4; }
+        .trivia-options { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .trivia-option { background: rgba(255,255,255,0.1); border: 1px solid var(--accent); padding: 14px; border-radius: 12px; cursor: pointer; transition: all 0.2s ease; }
+        .trivia-option:hover { background: var(--accent); color: black; transform: scale(1.02); }
+        .trivia-option.correct { background: #4caf50; border-color: #4caf50; color: white; }
+        .trivia-option.incorrect { background: #f44336; border-color: #f44336; color: white; }
+        .trivia-score { font-size: 28px; font-weight: bold; color: var(--accent); margin: 20px 0; }
+        .trivia-progress { width: 100%; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; margin: 15px 0; overflow: hidden; }
+        .trivia-progress-bar { height: 100%; background: var(--accent); transition: width 0.3s ease; }
+
+        /* Carrusel mejorado - más vistoso */
+        .carousel-container {
+            position: relative;
+            width: 100%;
+            margin: 20px 0;
+            border-radius: 20px;
+            overflow: hidden;
+            background: #000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .carousel-slide {
+            display: none;
+            width: 100%;
+            text-align: center;
+            background: linear-gradient(45deg, #222, #000);
+            padding: 10px 0;
+        }
+        .carousel-slide.active {
+            display: block;
+            animation: zoomEffect 0.5s ease;
+        }
+        @keyframes zoomEffect { 
+            from { opacity: 0.4; transform: scale(0.95); } 
+            to { opacity: 1; transform: scale(1); } 
+        }
+        .carousel-slide img, .carousel-slide video {
+            width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 15px;
+            background: #000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .carousel-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            gap: 10px;
+        }
+        .carousel-btn {
+            background: var(--accent);
+            border: none;
+            color: black;
+            font-size: 22px;
+            font-weight: bold;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .carousel-btn:hover { transform: scale(1.1); box-shadow: 0 0 20px var(--accent); }
+        .carousel-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .carousel-indicators {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        .carousel-dot {
+            width: 14px;
+            height: 14px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid var(--accent);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .carousel-dot.active {
+            background: var(--accent);
+            transform: scale(1.3);
+            box-shadow: 0 0 15px var(--accent);
+        }
+        .carousel-title {
+            font-size: 18px;
+            margin: 10px 0;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .context-buttons { bottom: 100px; gap: 10px; }
+            .context-btn { padding: 10px 12px; min-width: 90px; font-size: 13px; }
+            .fireworks-btn { bottom: 15px; left: 15px; padding: 8px 12px; font-size: 12px; }
+            .seed-selector { bottom: 70px; left: 15px; max-width: 160px; }
+            .seed-btn { width: 28px; height: 28px; }
+            .screen-overlay { top: 70px; padding: 15px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+    <div class="loader"></div>
+    <h2>Iniciando MundiAR</h2>
+    <p id="loading-status">Inicializando componentes...</p>
+    <div class="loading-info"><p>Usando camara principal</p><p>Escanea cualquier marcador</p></div>
+</div>
+
+<!-- SCAN SCREEN -->
+<div id="scanScreen" class="screen active">
+    <div class="scan-box"></div>
+    <p class="scan-text">Escanea un marcador</p>
+</div>
+
+<!-- MAIN SCREEN -->
+<div id="mainScreen" class="screen">
+    <header class="top-bar">
+        <button id="prevScreen" class="nav-btn">‹</button>
+        <h1 id="screenTitle">Seleccion</h1>
+        <button id="nextScreen" class="nav-btn">›</button>
+    </header>
+    <div class="content-area"></div>
+    <div id="screenOverlay" class="screen-overlay"></div>
+    <div class="context-buttons">
+        <button id="actionBtn1" class="context-btn">Accion 1</button>
+        <button id="actionBtn2" class="context-btn">Accion 2</button>
+    </div>
+    <div id="popup" class="popup">
+        <div class="popup-content">
+            <p id="popupText"></p>
+            <button id="closePopup">Cerrar</button>
+        </div>
+    </div>
+    <!-- Color seed selector -->
+  
+    <!-- Fireworks button -->
+    <button id="fireworksBtn" class="fireworks-btn">Fuegos AR</button>
+    <button id="openFilters" class="menu-btn">☰</button>
+    <div id="filterMenu" class="filter-menu">
+        <button id="closeFilters" class="close-menu">✕</button>
+        <div class="filter-track" id="filterTrack"></div>
+    </div>
+</div>
+
+<!-- TRIVIA/GALERÍA CONTAINER -->
+<div id="triviaContainer" class="trivia-container">
+    <div class="trivia-content" id="triviaContent"></div>
+</div>
+
+<!-- DEBUG -->
+<div class="debug-panel" id="debugPanel">
+    <strong>DEBUG MODE (D)</strong>
+    <div>Marcador: <span id="debugMarkerStatus">No detectado</span></div>
+    <div>Estado: <span id="debugState">Ninguno</span></div>
+    <div>Camara: <span id="debugCameraStatus">Principal</span></div>
+    <div>Fuegos: <span id="debugFireworks">0 activos</span></div>
+    <div>Animaciones: <span id="debugAnimations">0</span></div>
+    <div style="margin-top:8px;font-size:10px;color:#888">1-9: Forzar | R: Reload | F: Fuegos</div>
+</div>
+
+<div class="instructions"><span>Escanea un marcador | D: Debug | F: Fuegos artificiales | 1-9: Forzar</span></div>
+
+<div class="error-message" id="errorMessage">
+    <h3>Error</h3>
+    <p id="errorText"></p>
+    <button class="reload-btn" onclick="location.reload()">Reintentar</button>
+</div>
+
+<!-- A-FRAME SCENE -->
+<a-scene 
+    id="arScene"
+    embedded
+    vr-mode-ui="enabled: false"
+    arjs="sourceType: webcam; sourceWidth: 1280; sourceHeight: 720; displayWidth: 1280; displayHeight: 720; debugUIEnabled: false; detectionMode: mono; maxDetectionRate: 60; patternRatio: 0.5;"
+    renderer="logarithmicDepthBuffer: true; antialias: true; physicallyCorrectLights: true; colorManagement: true; exposure: 2.0;"
+    loading-screen="enabled: false;"
+    ar-fireworks-system>
+    
+    <a-entity camera position="0 0 0" look-controls="enabled: false"></a-entity>
+    
+    <!-- LUCES MEJORADAS PARA MATERIALES DE ORO (más intensidad) -->
+    <a-light type="ambient" color="#FFFFFF" intensity="1.0"></a-light>
+    <a-light type="directional" color="#FFFFFF" intensity="2.0" position="2 3 2"></a-light>
+    <a-light type="directional" color="#FFF5E6" intensity="2.0" position="-2 2 -2"></a-light>
+    <a-light type="point" color="#FFD700" intensity="1.5" position="1 2 1"></a-light>
+    <a-light type="point" color="#FFAA00" intensity="1.2" position="-1 1 -1"></a-light>
+    
+    <!-- MARCADORES CON MODELO base.glb (ESCALA AUMENTADA a 1.5 para que se vea más grande) -->
+    <!-- NOTA: Los modelos de estadio y copa ahora se cargarán UNA SOLA VEZ y se reutilizarán -->
+    <a-marker id="marker-ARG" type="pattern" url="./assets/arg/arg.patt" size="0.15" smooth="true" smoothCount="5" smoothTolerance="0.05" emitevents="true">
+        <a-entity id="model-ARG" class="ar-model" data-pais="ARG" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    </a-marker>
+
+    <a-marker id="marker-COL" type="pattern" url="./assets/col/col.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-COL" class="ar-model" data-pais="COL" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    </a-marker>
+
+    <a-marker id="marker-ESP" type="pattern" url="./assets/esp/esp.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-ESP" class="ar-model" data-pais="ESP" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    </a-marker>
+
+    <a-marker id="marker-FRA" type="pattern" url="./assets/fra/fra.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-FRA" class="ar-model" data-pais="FRA" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    </a-marker>
+
+    <a-marker id="marker-JPN" type="pattern" url="./assets/jpn/jpn.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-JPN" class="ar-model" data-pais="JPN" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    </a-marker>
+
+    <a-marker id="marker-KOR" type="pattern" url="./assets/kor/kor.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-KOR" class="ar-model" data-pais="KOR" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    </a-marker>
+
+    <a-marker id="marker-MEX" type="pattern" url="./assets/mex/mex.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-MEX" class="ar-model" data-pais="MEX" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    </a-marker>
+
+    <a-marker id="marker-POR" type="pattern" url="./assets/por/por.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-POR" class="ar-model" data-pais="POR" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    </a-marker>
+
+    <a-marker id="marker-TUN" type="pattern" url="./assets/tun/tun.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-TUN" class="ar-model" data-pais="TUN" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    </a-marker>
+
+    <a-marker id="marker-URY" type="pattern" url="./assets/ury/ury.patt" size="0.15" smooth="true" emitevents="true">
+        <a-entity id="model-URY" class="ar-model" data-pais="URY" gltf-model="./assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
+    </a-marker>
+
+    <!-- Contenedores ÚNICOS para estadio y copa (se reutilizan para todos los países) -->
+    <a-entity id="estadio-unico" class="estadio-model" gltf-model="" position="0 0 0" scale="0.4 0.4 0.4" visible="false"></a-entity>
+    <a-entity id="copa-unica" class="copa-model" gltf-model="" position="0 0 0" scale="0.3 0.3 0.3" visible="false" rotation="0 45 0"></a-entity>
+
+</a-scene>
+
+<script src="https://unpkg.com/aframe-animation-mixer-component@3.0.1/dist/aframe-animation-mixer-component.min.js"></script>
+
+<script>
+// ==================================================
+// CONFIGURACIÓN DE PAÍSES CON ASIGNACIONES SEGÚN LO SOLICITADO
+// ==================================================
+const PAISES_CONFIG = {
+    ARG: { 
+        nombre: 'Argentina', 
+        bandera: './assets/ARG/image.jpg', 
+        estadio: 'bbva',
+        copa: { año: 1978, mensaje: 'YA GANÓ' }
+    },
+    COL: { 
+        nombre: 'Colombia', 
+        bandera: './assets/COL/image.jpg', 
+        estadio: 'azteca',
+        copa: { mensaje: 'ESTE AÑO ES EL BUENO' }
+    },
+    ESP: { 
+        nombre: 'España', 
+        bandera: './assets/ESP/image.jpg', 
+        estadio: 'akron',
+        copa: { año: 2010, mensaje: 'YA GANÓ' }
+    },
+    FRA: { 
+        nombre: 'Francia', 
+        bandera: './assets/FRA/image.jpg', 
+        estadio: 'bbva',
+        copa: { año: 2018, mensaje: 'YA GANÓ' }
+    },
+    JPN: { 
+        nombre: 'Japón', 
+        bandera: './assets/JPN/image.jpg', 
+        estadio: 'akron',
+        copa: { mensaje: 'ESTE AÑO ES EL BUENO' }
+    },
+    KOR: { 
+        nombre: 'Corea del Sur', 
+        bandera: './assets/KOR/image.jpg', 
+        estadio: 'azteca',
+        copa: { mensaje: 'ESTE AÑO ES EL BUENO' }
+    },
+    MEX: { 
+        nombre: 'México', 
+        bandera: './assets/MEX/image.jpg', 
+        estadio: 'azteca',
+        copa: { mensaje: 'ESTE AÑO ES EL BUENO' }
+    },
+    POR: { 
+        nombre: 'Portugal', 
+        bandera: './assets/POR/image.jpg', 
+        estadio: 'bbva',
+        copa: { mensaje: 'ESTE AÑO ES EL BUENO' }
+    },
+    TUN: { 
+        nombre: 'Túnez', 
+        bandera: './assets/TUN/image.jpg', 
+        estadio: 'akron',
+        copa: { mensaje: 'ESTE AÑO ES EL BUENO' }
+    },
+    URY: { 
+        nombre: 'Uruguay', 
+        bandera: './assets/URY/image.jpg', 
+        estadio: 'bbva',
+        copa: { año: 1930, mensaje: 'YA GANÓ' }
+    }
+};
+
+// ==================================================
+// MODELOS DE ESTADIOS Y COPA
+// ==================================================
+const MODELOS = {
+    bbva: './assets/bbva.glb',
+    akron: './assets/akron.glb',
+    azteca: './assets/azteca.glb',
+    copa: './assets/copa.glb'
+};
+
+// ==================================================
+// COLOR SEEDS (PALETA DE COLORES PARA FUEGOS)
+// ==================================================
+const ColorSeed = {
+    RED:     { colors: [0xff2200, 0xff6600, 0xff0044] },
+    BLUE:    { colors: [0x0044ff, 0x00ccff, 0x8800ff] },
+    GREEN:   { colors: [0x00ff44, 0x88ff00, 0x00ffcc] },
+    GOLD:    { colors: [0xffcc00, 0xff9900, 0xffee44] },
+    RAINBOW: { colors: [0xff0000, 0xff9900, 0xffff00, 0x00ff44, 0x00ccff, 0x0044ff, 0xff00ff] }
+};
+
+let activeSeed = ColorSeed.RAINBOW;
+
+// ==================================================
+// A-FRAME COMPONENT: AR-FIREWORKS-SYSTEM (con partículas más grandes)
+// ==================================================
+AFRAME.registerComponent('ar-fireworks-system', {
+    init: function () {
+        this.fireworks = [];
+        this.THREE = THREE;
+        window._arFireworksSystem = this;
+    },
+
+    launch: function (worldPos, seed, count) {
+        const T = this.THREE || THREE;
+        count = count || 400;
+        seed  = seed || ColorSeed.RAINBOW;
+
+        const geometry = new T.BufferGeometry();
+        const positions  = new Float32Array(count * 3);
+        const colorsAttr = new Float32Array(count * 3);
+        const velocities = [];
+
+        const palette = seed.colors.map(h => new T.Color(h));
+
+        for (let i = 0; i < count; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const phi   = Math.acos(2 * Math.random() - 1);
+            const speed = 0.3 + Math.random() * 0.7;
+
+            velocities.push({
+                x: Math.sin(phi) * Math.cos(theta) * speed,
+                y: Math.cos(phi) * speed + 0.2,
+                z: Math.sin(phi) * Math.sin(theta) * speed
+            });
+
+            const c = palette[Math.floor(Math.random() * palette.length)];
+            positions[i * 3]     = 0;
+            positions[i * 3 + 1] = 0;
+            positions[i * 3 + 2] = 0;
+            colorsAttr[i * 3]     = c.r;
+            colorsAttr[i * 3 + 1] = c.g;
+            colorsAttr[i * 3 + 2] = c.b;
+        }
+
+        geometry.setAttribute('position', new T.BufferAttribute(positions, 3));
+        geometry.setAttribute('color',    new T.BufferAttribute(colorsAttr, 3));
+
+        // TAMAÑO DE PARTÍCULA AUMENTADO (de 0.035 a 0.08)
+        const material = new T.PointsMaterial({
+            size: 0.08,
+            vertexColors: true,
+            blending: T.AdditiveBlending,
+            transparent: true,
+            depthWrite: false,
+            opacity: 1.0
+        });
+
+        const points = new T.Points(geometry, material);
+        points.position.copy(worldPos);
+        this.el.sceneEl.object3D.add(points);
+
+        const haloGeo = new T.SphereGeometry(0.06, 8, 8);
+        const haloMat = new T.MeshBasicMaterial({
+            color: palette[0],
+            transparent: true,
+            opacity: 0.6,
+            blending: T.AdditiveBlending
+        });
+        const halo = new T.Mesh(haloGeo, haloMat);
+        halo.position.copy(worldPos);
+        this.el.sceneEl.object3D.add(halo);
+
+        this.fireworks.push({
+            mesh: points,
+            halo: halo,
+            velocities: velocities,
+            life: 1.0,
+            maxLife: 1.0
+        });
+
+        document.getElementById('debugFireworks').textContent = this.fireworks.length + ' activos';
+    },
+
+    tick: function (time, deltaTime) {
+        if (this.fireworks.length === 0) return;
+
+        const dt = Math.min(deltaTime / 1000, 0.05);
+
+        for (let fi = this.fireworks.length - 1; fi >= 0; fi--) {
+            const fw = this.fireworks[fi];
+            const pos = fw.mesh.geometry.attributes.position.array;
+            const n   = fw.velocities.length;
+
+            for (let i = 0; i < n; i++) {
+                const v = fw.velocities[i];
+                pos[i * 3]     += v.x * dt * 8;
+                pos[i * 3 + 1] += v.y * dt * 8;
+                pos[i * 3 + 2] += v.z * dt * 8;
+                v.y -= 1.5 * dt;
+                v.x *= 0.99;
+                v.z *= 0.99;
+            }
+
+            fw.mesh.geometry.attributes.position.needsUpdate = true;
+            fw.life -= dt * 0.8;
+
+            const t = fw.life / fw.maxLife;
+            fw.mesh.material.opacity = Math.max(0, t);
+            fw.halo.material.opacity  = Math.max(0, t * 0.5);
+
+            const s = 1 + (1 - t) * 3;
+            fw.halo.scale.setScalar(s);
+
+            if (fw.life <= 0) {
+                this.el.sceneEl.object3D.remove(fw.mesh);
+                this.el.sceneEl.object3D.remove(fw.halo);
+                this.fireworks.splice(fi, 1);
+            }
+        }
+
+        document.getElementById('debugFireworks').textContent = this.fireworks.length + ' activos';
+    }
+});
+
+// ==================================================
+// FILTROS VISUALES
+// ==================================================
+let currentFilter = 'none';
+let glitchInterval;
+
+function applyFilter(filterType) {
+    currentFilter = filterType;
+    const video = document.querySelector('video');
+    if (!video) return;
+
+    if (glitchInterval) {
+        clearInterval(glitchInterval);
+        glitchInterval = null;
+    }
+
+    video.style.filter = '';
+    video.style.imageRendering = 'auto';
+    video.style.transform = 'none';
+    video.style.width = '100%';
+    video.style.height = '100%';
+    video.style.opacity = '1';
+
+    switch(filterType) {
+        case 'pixel':
+            video.style.imageRendering = 'pixelated';
+            video.style.transform = 'scale(0.3)';
+            video.style.transformOrigin = 'top left';
+            video.style.width = '333%';
+            video.style.height = '333%';
+            break;
+        case 'blur':
+            video.style.filter = 'blur(5px)';
+            break;
+        case 'brightness':
+            video.style.filter = 'brightness(1.5) contrast(1.3) saturate(1.2)';
+            break;
+        case 'heatmap':
+            video.style.filter = 'hue-rotate(180deg) saturate(3) contrast(1.4) sepia(0.5)';
+            break;
+        case 'glitch':
+            video.style.filter = 'contrast(1.5) brightness(1.2)';
+            glitchInterval = setInterval(() => {
+                if (Math.random() > 0.7) {
+                    video.style.transform = `translate(${Math.random()*5-2.5}px, ${Math.random()*5-2.5}px)`;
+                    video.style.opacity = '0.9';
+                    setTimeout(() => {
+                        video.style.transform = 'none';
+                        video.style.opacity = '1';
+                    }, 100);
+                }
+            }, 200);
+            break;
+        case 'edge':
+            video.style.filter = 'contrast(2) brightness(1.2) invert(0.2)';
+            break;
+        case 'none':
+        default:
+            video.style.filter = 'none';
+            break;
+    }
+}
+
+// ==================================================
+// CONFIGURACION DE MARCADORES
+// ==================================================
+const MARKERS_CONFIG = [
+    {
+        id: 'marker-ARG', code: 'ARG', name: 'Argentina', color: '#75AADB',
+        fireworkColors: [0x75AADB, 0xFFFFFF, 0xFCD116],
+        screens: [
+            { name: 'Seleccion', type: 'selection', color: '#75AADB', content: 'Bienvenido a Argentina' },
+            { name: 'Galería',   type: 'gallery',   color: '#4CAF50', 
+              content: 'Galería de Argentina',
+              media: [
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1612293902056-67d9e6c5b7b5?w=400', title: 'Buenos Aires' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1589909202802-8f4aadce1849?w=400', title: 'Messi' },
+                  { type: 'video', url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4', title: 'Video Tango' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1516302752625-fcc3c50ae61f?w=400', title: 'Estadio' }
+              ] },
+            { name: 'Estadio',   type: 'stadium',   color: '#FF9800', 
+              content: `Estadio ${PAISES_CONFIG.ARG.estadio.toUpperCase()}`,
+              modelo: MODELOS[PAISES_CONFIG.ARG.estadio],
+              info: { estadio: PAISES_CONFIG.ARG.estadio } },
+            { name: 'Copa',      type: 'cup',       color: '#9C27B0', 
+              content: PAISES_CONFIG.ARG.copa.año ? 
+                `Copa Mundial ${PAISES_CONFIG.ARG.copa.año} - ${PAISES_CONFIG.ARG.copa.mensaje}` : 
+                PAISES_CONFIG.ARG.copa.mensaje,
+              info: PAISES_CONFIG.ARG.copa },
+            { name: 'Trivia',    type: 'trivia',    color: '#F44336', content: 'Preguntas sobre Argentina',
+              questions: [
+                  { question: '¿Cuál es la capital de Argentina?', options: ['Córdoba','Rosario','Buenos Aires','Mendoza'], correct: 2 },
+                  { question: '¿Quién es el "Dios" del fútbol argentino?', options: ['Messi','Maradona','Kempes','Batistuta'], correct: 1 },
+                  { question: '¿Qué baile típico es de Argentina?', options: ['Salsa','Tango','Flamenco','Samba'], correct: 1 },
+                  { question: '¿Cuántas Copas del Mundo ha ganado Argentina?', options: ['1','2','3','4'], correct: 3 },
+                  { question: '¿Qué plato de carne asada es típico argentino?', options: ['Parrillada','Empanadas','Locro','Humita'], correct: 0 }
+              ] }
+        ]
+    },
+    {
+        id: 'marker-COL', code: 'COL', name: 'Colombia', color: '#FCD116',
+        fireworkColors: [0xFCD116, 0x003087, 0xCE1126],
+        screens: [
+            { name: 'Seleccion', type: 'selection', color: '#FCD116', content: 'Bienvenido a Colombia' },
+            { name: 'Galería',   type: 'gallery',   color: '#4CAF50',
+              content: 'Galería de Colombia',
+              media: [
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1535991853912-62d7be9c9c7d?w=400', title: 'Cartagena' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1526397750854-8350c7f62b28?w=400', title: 'Café' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1589409514187-c21d14df0d04?w=400', title: 'Montañas' }
+              ] },
+            { name: 'Estadio',   type: 'stadium',   color: '#FF9800', 
+              content: `Estadio ${PAISES_CONFIG.COL.estadio.toUpperCase()}`,
+              modelo: MODELOS[PAISES_CONFIG.COL.estadio],
+              info: { estadio: PAISES_CONFIG.COL.estadio } },
+            { name: 'Copa',      type: 'cup',       color: '#9C27B0', 
+              content: PAISES_CONFIG.COL.copa.mensaje,
+              info: PAISES_CONFIG.COL.copa },
+            { name: 'Trivia',    type: 'trivia',    color: '#F44336', content: 'Preguntas sobre Colombia',
+              questions: [
+                  { question: '¿Cuál es la capital de Colombia?', options: ['Medellín','Cali','Bogotá','Cartagena'], correct: 2 },
+                  { question: '¿Qué escritor colombiano ganó el Nobel?', options: ['Márquez','Vargas Llosa','Paz','Neruda'], correct: 0 },
+                  { question: '¿Qué baile es típico de Colombia?', options: ['Salsa','Tango','Flamenco','Samba'], correct: 0 },
+                  { question: '¿Cuántas Copas del Mundo ha ganado Colombia?', options: ['0','1','2','3'], correct: 0 },
+                  { question: '¿Qué producto agrícola es famoso en Colombia?', options: ['Café','Té','Cacao','Azúcar'], correct: 0 }
+              ] }
+        ]
+    },
+    {
+        id: 'marker-ESP', code: 'ESP', name: 'España', color: '#AA151B',
+        fireworkColors: [0xAA151B, 0xF1BF00],
+        screens: [
+            { name: 'Seleccion', type: 'selection', color: '#AA151B', content: 'Bienvenido a España' },
+            { name: 'Galería',   type: 'gallery',   color: '#4CAF50',
+              content: 'Galería de España',
+              media: [
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1543783207-ec64e4d95325?w=400', title: 'Sagrada Familia' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1522083165195-3424ed129620?w=400', title: 'Plaza Mayor' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=400', title: 'Alhambra' },
+                  { type: 'video', url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4', title: 'Video Flamenco' }
+              ] },
+            { name: 'Estadio',   type: 'stadium',   color: '#FF9800', 
+              content: `Estadio ${PAISES_CONFIG.ESP.estadio.toUpperCase()}`,
+              modelo: MODELOS[PAISES_CONFIG.ESP.estadio],
+              info: { estadio: PAISES_CONFIG.ESP.estadio } },
+            { name: 'Copa',      type: 'cup',       color: '#9C27B0', 
+              content: `Copa Mundial ${PAISES_CONFIG.ESP.copa.año} - ${PAISES_CONFIG.ESP.copa.mensaje}`,
+              info: PAISES_CONFIG.ESP.copa },
+            { name: 'Trivia',    type: 'trivia',    color: '#F44336', content: 'Preguntas sobre España',
+              questions: [
+                  { question: '¿Cuál es la capital de España?', options: ['Barcelona','Madrid','Valencia','Sevilla'], correct: 1 },
+                  { question: '¿Qué baile típico es de España?', options: ['Salsa','Tango','Flamenco','Samba'], correct: 2 },
+                  { question: '¿Qué plato típico español es arroz?', options: ['Paella','Tapas','Gazpacho','Tortilla'], correct: 0 },
+                  { question: '¿Cuántas Copas del Mundo ha ganado España?', options: ['0','1','2','3'], correct: 1 },
+                  { question: '¿Qué jugador español ganó el Balón de Oro 2010?', options: ['Xavi','Iniesta','Messi','Cristiano'], correct: 0 }
+              ] }
+        ]
+    },
+    {
+        id: 'marker-FRA', code: 'FRA', name: 'Francia', color: '#002395',
+        fireworkColors: [0x002395, 0xFFFFFF, 0xED2939],
+        screens: [
+            { name: 'Seleccion', type: 'selection', color: '#002395', content: 'Bienvenido a Francia' },
+            { name: 'Galería',   type: 'gallery',   color: '#4CAF50',
+              content: 'Galería de Francia',
+              media: [
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400', title: 'Torre Eiffel' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=400', title: 'Arco del Triunfo' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1549144511-f099e773c147?w=400', title: 'Campos Elíseos' },
+                  { type: 'video', url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4', title: 'Video Francia' }
+              ] },
+            { name: 'Estadio',   type: 'stadium',   color: '#FF9800', 
+              content: `Estadio ${PAISES_CONFIG.FRA.estadio.toUpperCase()}`,
+              modelo: MODELOS[PAISES_CONFIG.FRA.estadio],
+              info: { estadio: PAISES_CONFIG.FRA.estadio } },
+            { name: 'Copa',      type: 'cup',       color: '#9C27B0', 
+              content: `Copa Mundial ${PAISES_CONFIG.FRA.copa.año} - ${PAISES_CONFIG.FRA.copa.mensaje}`,
+              info: PAISES_CONFIG.FRA.copa },
+            { name: 'Trivia',    type: 'trivia',    color: '#F44336', content: 'Preguntas sobre Francia',
+              questions: [
+                  { question: '¿Cuál es la capital de Francia?', options: ['Lyon','Marsella','París','Burdeos'], correct: 2 },
+                  { question: '¿Quién ganó el Balón de Oro en 1998?', options: ['Zidane','Ronaldo','Figo','Owen'], correct: 0 },
+                  { question: '¿Qué monumento es símbolo de Francia?', options: ['Coliseo','Big Ben','Torre Eiffel','Estatua Libertad'], correct: 2 },
+                  { question: '¿Cuántas Copas del Mundo ha ganado Francia?', options: ['1','2','3','4'], correct: 1 },
+                  { question: '¿Qué plato típico francés lleva caracoles?', options: ['Ratatouille','Bouillabaisse','Cassoulet','Escargots'], correct: 3 }
+              ] }
+        ]
+    },
+    {
+        id: 'marker-JPN', code: 'JPN', name: 'Japón', color: '#BC002D',
+        fireworkColors: [0xFFFFFF, 0xBC002D],
+        screens: [
+            { name: 'Seleccion', type: 'selection', color: '#BC002D', content: '日本へようこそ' },
+            { name: 'Galería',   type: 'gallery',   color: '#4CAF50',
+              content: 'Galería de Japón',
+              media: [
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400', title: 'Monte Fuji' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=400', title: 'Tokio' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=400', title: 'Templo' },
+                  { type: 'video', url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4', title: 'Video Cerezos' }
+              ] },
+            { name: 'Estadio',   type: 'stadium',   color: '#FF9800', 
+              content: `Estadio ${PAISES_CONFIG.JPN.estadio.toUpperCase()}`,
+              modelo: MODELOS[PAISES_CONFIG.JPN.estadio],
+              info: { estadio: PAISES_CONFIG.JPN.estadio } },
+            { name: 'Copa',      type: 'cup',       color: '#9C27B0', 
+              content: PAISES_CONFIG.JPN.copa.mensaje,
+              info: PAISES_CONFIG.JPN.copa },
+            { name: 'Trivia',    type: 'trivia',    color: '#F44336', content: 'Preguntas sobre Japón',
+              questions: [
+                  { question: '¿Cuál es la capital de Japón?', options: ['Osaka','Kioto','Tokio','Yokohama'], correct: 2 },
+                  { question: '¿Qué deporte es el más popular en Japón?', options: ['Fútbol','Béisbol','Sumo','Karate'], correct: 1 },
+                  { question: '¿Qué plato típico es de Japón?', options: ['Ramen','Kimchi','Pho','Curry'], correct: 0 },
+                  { question: '¿Cuántas Copas del Mundo ha ganado Japón?', options: ['0','1','2','3'], correct: 0 },
+                  { question: '¿Qué monte sagrado es símbolo de Japón?', options: ['Fuji','Everest','Kilimanjaro','Elbrus'], correct: 0 }
+              ] }
+        ]
+    },
+    {
+        id: 'marker-KOR', code: 'KOR', name: 'Corea del Sur', color: '#CD2E3A',
+        fireworkColors: [0xFFFFFF, 0xCD2E3A, 0x0047A0],
+        screens: [
+            { name: 'Seleccion', type: 'selection', color: '#CD2E3A', content: '한국에 오신 것을 환영합니다' },
+            { name: 'Galería',   type: 'gallery',   color: '#4CAF50',
+              content: 'Galería de Corea del Sur',
+              media: [
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1517154421773-0529f29ea451?w=400', title: 'Seúl' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1538488881038-e252a119ace7?w=400', title: 'Palacio' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1578194063893-c3fd9cc5f0e4?w=400', title: 'Comida' }
+              ] },
+            { name: 'Estadio',   type: 'stadium',   color: '#FF9800', 
+              content: `Estadio ${PAISES_CONFIG.KOR.estadio.toUpperCase()}`,
+              modelo: MODELOS[PAISES_CONFIG.KOR.estadio],
+              info: { estadio: PAISES_CONFIG.KOR.estadio } },
+            { name: 'Copa',      type: 'cup',       color: '#9C27B0', 
+              content: PAISES_CONFIG.KOR.copa.mensaje,
+              info: PAISES_CONFIG.KOR.copa },
+            { name: 'Trivia',    type: 'trivia',    color: '#F44336', content: 'Preguntas sobre Corea del Sur',
+              questions: [
+                  { question: '¿Cuál es la capital de Corea del Sur?', options: ['Busan','Incheon','Seúl','Daegu'], correct: 2 },
+                  { question: '¿Qué plato típico coreano es fermentado?', options: ['Kimchi','Sushi','Ramen','Dim sum'], correct: 0 },
+                  { question: '¿Qué tecnología es famosa en Corea?', options: ['Samsung','Toyota','Huawei','Apple'], correct: 0 },
+                  { question: '¿Cuántas Copas del Mundo ha ganado Corea?', options: ['0','1','2','3'], correct: 0 },
+                  { question: '¿Qué deporte de tiro con arco es popular?', options: ['Arquería','Tiro olímpico','Dardos','Cetrería'], correct: 0 }
+              ] }
+        ]
+    },
+    {
+        id: 'marker-MEX', code: 'MEX', name: 'México', color: '#006341',
+        fireworkColors: [0x006341, 0xFFFFFF, 0xCE1126],
+        screens: [
+            { name: 'Seleccion', type: 'selection', color: '#006341', content: 'Bienvenido a México' },
+            { name: 'Galería',   type: 'gallery',   color: '#4CAF50',
+              content: 'Galería de México',
+              media: [
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1518105779142-d975f22f1b0a?w=400', title: 'Chichén Itzá' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1587595431977-2ef8c3a7f2a5?w=400', title: 'Mariachi' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1594046243092-37c203bb7d9a?w=400', title: 'Comida' }
+              ] },
+            { name: 'Estadio',   type: 'stadium',   color: '#FF9800', 
+              content: `Estadio ${PAISES_CONFIG.MEX.estadio.toUpperCase()}`,
+              modelo: MODELOS[PAISES_CONFIG.MEX.estadio],
+              info: { estadio: PAISES_CONFIG.MEX.estadio } },
+            { name: 'Copa',      type: 'cup',       color: '#9C27B0', 
+              content: PAISES_CONFIG.MEX.copa.mensaje,
+              info: PAISES_CONFIG.MEX.copa },
+            { name: 'Trivia',    type: 'trivia',    color: '#F44336', content: 'Preguntas sobre México',
+              questions: [
+                  { question: '¿Cuál es la capital de México?', options: ['Guadalajara','Monterrey','Ciudad de México','Puebla'], correct: 2 },
+                  { question: '¿Qué civilización antigua es famosa en México?', options: ['Inca','Maya','Azteca','Olmeca'], correct: 2 },
+                  { question: '¿Qué plato típico mexicano es?', options: ['Tacos','Empanadas','Arepas','Ceviche'], correct: 0 },
+                  { question: '¿Cuántas Copas del Mundo ha ganado México?', options: ['0','1','2','3'], correct: 0 },
+                  { question: '¿Qué día se celebra el Día de Muertos?', options: ['1 Nov','2 Nov','31 Oct','15 Sep'], correct: 1 }
+              ] }
+        ]
+    },
+    {
+        id: 'marker-POR', code: 'POR', name: 'Portugal', color: '#006600',
+        fireworkColors: [0x006600, 0xFF0000, 0xFFFF00],
+        screens: [
+            { name: 'Seleccion', type: 'selection', color: '#006600', content: 'Bem-vindo a Portugal' },
+            { name: 'Galería',   type: 'gallery',   color: '#4CAF50',
+              content: 'Galería de Portugal',
+              media: [
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=400', title: 'Lisboa' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1548707309-dcebe4079c4b?w=400', title: 'Oporto' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1585208798174-6cedd86e019a?w=400', title: 'Pastel de Belém' }
+              ] },
+            { name: 'Estadio',   type: 'stadium',   color: '#FF9800', 
+              content: `Estadio ${PAISES_CONFIG.POR.estadio.toUpperCase()}`,
+              modelo: MODELOS[PAISES_CONFIG.POR.estadio],
+              info: { estadio: PAISES_CONFIG.POR.estadio } },
+            { name: 'Copa',      type: 'cup',       color: '#9C27B0', 
+              content: PAISES_CONFIG.POR.copa.mensaje,
+              info: PAISES_CONFIG.POR.copa },
+            { name: 'Trivia',    type: 'trivia',    color: '#F44336', content: 'Preguntas sobre Portugal',
+              questions: [
+                  { question: '¿Cuál es la capital de Portugal?', options: ['Oporto','Lisboa','Braga','Coímbra'], correct: 1 },
+                  { question: '¿Quién es el jugador más famoso de Portugal?', options: ['Eusébio','Figo','Ronaldo','Deco'], correct: 2 },
+                  { question: '¿Qué plato típico es de Portugal?', options: ['Paella','Bacalhau','Tapas','Pasta'], correct: 1 },
+                  { question: '¿Cuántas Copas del Mundo ha ganado Portugal?', options: ['0','1','2','3'], correct: 0 },
+                  { question: '¿Qué dulce típico es de Lisboa?', options: ['Churros','Pastel de Belém','Flan','Arroz con leche'], correct: 1 }
+              ] }
+        ]
+    },
+    {
+        id: 'marker-TUN', code: 'TUN', name: 'Túnez', color: '#FF0000',
+        fireworkColors: [0xFF0000, 0xFFFFFF],
+        screens: [
+            { name: 'Seleccion', type: 'selection', color: '#FF0000', content: 'Bienvenue en Tunisie' },
+            { name: 'Galería',   type: 'gallery',   color: '#4CAF50',
+              content: 'Galería de Túnez',
+              media: [
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1589394815804-964ed0be2eb5?w=400', title: 'Médina' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1595841696677-6489ff3f8cd1?w=400', title: 'Desierto' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=400', title: 'Mar' }
+              ] },
+            { name: 'Estadio',   type: 'stadium',   color: '#FF9800', 
+              content: `Estadio ${PAISES_CONFIG.TUN.estadio.toUpperCase()}`,
+              modelo: MODELOS[PAISES_CONFIG.TUN.estadio],
+              info: { estadio: PAISES_CONFIG.TUN.estadio } },
+            { name: 'Copa',      type: 'cup',       color: '#9C27B0', 
+              content: PAISES_CONFIG.TUN.copa.mensaje,
+              info: PAISES_CONFIG.TUN.copa },
+            { name: 'Trivia',    type: 'trivia',    color: '#F44336', content: 'Preguntas sobre Túnez',
+              questions: [
+                  { question: '¿Cuál es la capital de Túnez?', options: ['Sfax','Sousse','Túnez','Bizerta'], correct: 2 },
+                  { question: '¿Qué desierto cubre parte de Túnez?', options: ['Sahara','Gobi','Kalahari','Atacama'], correct: 0 },
+                  { question: '¿Qué plato típico es de Túnez?', options: ['Cuscús','Tajín','Paella','Pilaf'], correct: 0 },
+                  { question: '¿Cuántas Copas del Mundo ha ganado Túnez?', options: ['0','1','2','3'], correct: 0 },
+                  { question: '¿Qué ruinas antiguas son famosas en Túnez?', options: ['Cartago','Pompeya','Petra','Éfeso'], correct: 0 }
+              ] }
+        ]
+    },
+    {
+        id: 'marker-URY', code: 'URY', name: 'Uruguay', color: '#0038A8',
+        fireworkColors: [0x0038A8, 0xFFFFFF, 0xFCD116],
+        screens: [
+            { name: 'Seleccion', type: 'selection', color: '#0038A8', content: 'Bienvenido a Uruguay' },
+            { name: 'Galería',   type: 'gallery',   color: '#4CAF50',
+              content: 'Galería de Uruguay',
+              media: [
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1619546952812-520e98064a1f?w=400', title: 'Punta del Este' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1516302752625-fcc3c50ae61f?w=400', title: 'Montevideo' },
+                  { type: 'image', url: 'https://images.unsplash.com/photo-1589365278144-c9e705d843ba?w=400', title: 'Campo' }
+              ] },
+            { name: 'Estadio',   type: 'stadium',   color: '#FF9800', 
+              content: `Estadio ${PAISES_CONFIG.URY.estadio.toUpperCase()}`,
+              modelo: MODELOS[PAISES_CONFIG.URY.estadio],
+              info: { estadio: PAISES_CONFIG.URY.estadio } },
+            { name: 'Copa',      type: 'cup',       color: '#9C27B0', 
+              content: `Copa Mundial ${PAISES_CONFIG.URY.copa.año} - ${PAISES_CONFIG.URY.copa.mensaje}`,
+              info: PAISES_CONFIG.URY.copa },
+            { name: 'Trivia',    type: 'trivia',    color: '#F44336', content: 'Preguntas sobre Uruguay',
+              questions: [
+                  { question: '¿Cuál es la capital de Uruguay?', options: ['Salto','Punta del Este','Montevideo','Colonia'], correct: 2 },
+                  { question: '¿Qué baile típico es de Uruguay?', options: ['Tango','Candombe','Samba','Milonga'], correct: 1 },
+                  { question: '¿Cuántas Copas del Mundo ha ganado Uruguay?', options: ['1','2','3','4'], correct: 1 },
+                  { question: '¿Qué jugador es famoso por el "pistolero"?', options: ['Suárez','Cavani','Forlán','Godín'], correct: 0 },
+                  { question: '¿Qué plato típico uruguayo es carne a la parrilla?', options: ['Asado','Churrasco','Parrillada','Milanesa'], correct: 2 }
+              ] }
+        ]
+    }
+];
+
+// ==================================================
+// ESTADO GLOBAL
+// ==================================================
+let appState = null;
+const stateListeners = [];
+let activeMarkerEl = null;
+let modelosCargados = {
+    base: {},
+    estadio: null,
+    copa: null
+};
+
+function setState(newState) {
+    if (newState === null) {
+        if (appState !== null) { appState = null; notifyListeners(); }
+        return;
+    }
+    if (!appState || appState.code !== newState.code) {
+        appState = { ...newState };
+        notifyListeners();
+    }
+}
+function notifyListeners() { stateListeners.forEach(l => { try { l(appState); } catch(e) {} }); }
+function getState()        { return appState; }
+function subscribe(fn)     {
+    stateListeners.push(fn);
+    try { fn(appState); } catch(e) {}
+    return () => { const i = stateListeners.indexOf(fn); if (i > -1) stateListeners.splice(i, 1); };
+}
+
+// ==================================================
+// FUNCIÓN PARA CARGAR BANDERA AL MATERIAL M_FLAG
+// ==================================================
+function cargarBanderaAlModelo(modelEl, codigoPais) {
+    if (!modelEl || !codigoPais || !PAISES_CONFIG[codigoPais]) return;
+    
+    const img = new Image();
+    img.src = PAISES_CONFIG[codigoPais].bandera;
+    img.crossOrigin = "Anonymous";
+    
+    img.onload = function() {
+        const mesh = modelEl.getObject3D('mesh');
+        if (!mesh) {
+            modelEl.addEventListener('model-loaded', function() {
+                const meshLoaded = modelEl.getObject3D('mesh');
+                if (meshLoaded) {
+                    aplicarTexturaABandera(meshLoaded, img);
+                }
+            }, { once: true });
+            return;
+        }
+        
+        aplicarTexturaABandera(mesh, img);
+    };
+}
+
+function aplicarTexturaABandera(mesh, img) {
+    const texture = new THREE.CanvasTexture(img);
+    texture.flipY = false;
+    
+    mesh.traverse(node => {
+        if (node.isMesh && node.material) {
+            if (Array.isArray(node.material)) {
+                node.material.forEach(mat => {
+                    if (mat.name === 'M_Flag' || (mat.name && mat.name.includes('Flag'))) {
+                        mat.map = texture;
+                        mat.needsUpdate = true;
+                        mat.emissive.setHex(0x333333);
+                    }
+                });
+            } else {
+                if (node.material.name === 'M_Flag' || (node.material.name && node.material.name.includes('Flag'))) {
+                    node.material.map = texture;
+                    node.material.needsUpdate = true;
+                    node.material.emissive.setHex(0x333333);
+                }
+            }
+        }
+    });
+}
+
+/// ==================================================
+// FUNCIÓN PARA REPRODUCIR ANIMACIONES (BASADA EN EL EJEMPLO QUE FUNCIONA)
+// ==================================================
+function reproducirAnimaciones(modelEl) {
+    if (!modelEl) return;
+    
+    console.log('🎬 Intentando activar animaciones...');
+    
+    // Función para iniciar animaciones cuando el modelo esté listo
+    const iniciarAnimaciones = (mesh) => {
+        if (!mesh) return false;
+        
+        // Buscar animaciones en el mesh y sus hijos
+        let animacionesEncontradas = false;
+        let mixersCreados = [];
+        
+        mesh.traverse((node) => {
+            if (node.isMesh && node.animations && node.animations.length > 0) {
+                console.log(`✅ Encontradas ${node.animations.length} animaciones en nodo:`, node.name || 'sin nombre');
+                
+                if (!node.userData.mixer) {
+                    node.userData.mixer = new THREE.AnimationMixer(node);
+                    
+                    node.animations.forEach((clip, index) => {
+                        const action = node.userData.mixer.clipAction(clip);
+                        action.play();
+                        console.log(`   ▶️ Animación ${index + 1}: ${clip.name || 'sin nombre'}`);
+                    });
+                    
+                    mixersCreados.push(node.userData.mixer);
+                    animacionesEncontradas = true;
+                }
+            }
+        });
+        
+        // También verificar en la raíz
+        if (mesh.animations && mesh.animations.length > 0) {
+            console.log(`✅ Encontradas ${mesh.animations.length} animaciones en la raíz`);
+            
+            if (!mesh.userData.mixer) {
+                mesh.userData.mixer = new THREE.AnimationMixer(mesh);
+                
+                mesh.animations.forEach((clip, index) => {
+                    const action = mesh.userData.mixer.clipAction(clip);
+                    action.play();
+                    console.log(`   ▶️ Animación ${index + 1}: ${clip.name || 'sin nombre'}`);
+                });
+                
+                mixersCreados.push(mesh.userData.mixer);
+                animacionesEncontradas = true;
+            }
+        }
+        
+        // Actualizar debug
+        if (animacionesEncontradas) {
+            document.getElementById('debugAnimations').textContent = mixersCreados.length;
+            
+            // Forzar actualización continua de los mixers
+            const animateMixers = () => {
+                mixersCreados.forEach(mixer => {
+                    if (mixer) mixer.update(0.016); // ~60fps
+                });
+                requestAnimationFrame(animateMixers);
+            };
+            animateMixers();
+        }
+        
+        return animacionesEncontradas;
+    };
+    
+    // Intentar obtener el mesh inmediatamente
+    const mesh = modelEl.getObject3D('mesh');
+    if (mesh) {
+        if (iniciarAnimaciones(mesh)) {
+            console.log('✨ Animaciones iniciadas correctamente');
+            return;
+        }
+    }
+    
+    // Si no está listo, esperar a que cargue
+    modelEl.addEventListener('model-loaded', function() {
+        const meshLoaded = modelEl.getObject3D('mesh');
+        if (meshLoaded) {
+            if (iniciarAnimaciones(meshLoaded)) {
+                console.log('✨ Animaciones iniciadas después de carga');
+            } else {
+                console.log('⚠️ No se encontraron animaciones en el modelo');
+            }
+        }
+    }, { once: true });
+    
+    // Reintentar varias veces (por si tarda)
+    let intentos = 0;
+    const maxIntentos = 20;
+    const intervalo = setInterval(() => {
+        const meshRetry = modelEl.getObject3D('mesh');
+        if (meshRetry) {
+            if (iniciarAnimaciones(meshRetry)) {
+                console.log('✨ Animaciones iniciadas en reintento');
+                clearInterval(intervalo);
+            }
+        }
+        intentos++;
+        if (intentos >= maxIntentos) {
+            console.log('⏰ Tiempo de espera para animaciones agotado');
+            clearInterval(intervalo);
+        }
+    }, 500);
+}
+
+// ==================================================
+// FUNCIÓN PARA MEJORAR MATERIALES METÁLICOS
+// ==================================================
+function mejorarMateriales(modelEl) {
+    if (!modelEl) return;
+    
+    const mesh = modelEl.getObject3D('mesh');
+    if (!mesh) {
+        modelEl.addEventListener('model-loaded', function() {
+            const meshLoaded = modelEl.getObject3D('mesh');
+            if (meshLoaded) {
+                aplicarMejoraMateriales(meshLoaded);
+            }
+        }, { once: true });
+        return;
+    }
+    
+    aplicarMejoraMateriales(mesh);
+}
+
+function aplicarMejoraMateriales(mesh) {
+    mesh.traverse(node => {
+        if (node.isMesh && node.material) {
+            const materials = Array.isArray(node.material) ? node.material : [node.material];
+            materials.forEach(mat => {
+                if (mat.name && (mat.name.includes('Gold') || mat.name.includes('Oro') || 
+                                 mat.name.includes('Metal') || mat.name.includes('Brass'))) {
+                    mat.emissive.setHex(0x442200);
+                    mat.emissiveIntensity = 0.5;
+                    mat.roughness = 0.2;
+                    mat.metalness = 1.0;
+                }
+                mat.needsUpdate = true;
+            });
+        }
+    });
+}
+
+// ==================================================
+// FUNCIÓN PARA CARGAR ESTADIO (SOLO UNA VEZ)
+// ==================================================
+function cargarEstadio(codigoPais) {
+    if (!codigoPais || !PAISES_CONFIG[codigoPais]) return;
+    
+    const estadioEl = document.getElementById('estadio-unico');
+    if (!estadioEl) return;
+    
+    const nombreEstadio = PAISES_CONFIG[codigoPais].estadio;
+    const modeloEstadio = MODELOS[nombreEstadio];
+    
+    // Si ya cargamos este estadio antes, no recargamos
+    if (modelosCargados.estadio === modeloEstadio) {
+        console.log(`Estadio ${nombreEstadio} ya estaba cargado`);
+        return;
+    }
+    
+    // Cargar nuevo estadio
+    estadioEl.setAttribute('gltf-model', modeloEstadio);
+    modelosCargados.estadio = modeloEstadio;
+    console.log(`Estadio ${nombreEstadio} cargado (primera vez)`);
+}
+
+// ==================================================
+// FUNCIÓN PARA CARGAR COPA (SOLO UNA VEZ)
+// ==================================================
+function cargarCopa(codigoPais) {
+    if (!codigoPais) return;
+    
+    const copaEl = document.getElementById('copa-unica');
+    if (!copaEl) return;
+    
+    // Si ya cargamos la copa antes, no recargamos
+    if (modelosCargados.copa === MODELOS.copa) {
+        console.log('Copa ya estaba cargada');
+        return;
+    }
+    
+    copaEl.setAttribute('gltf-model', MODELOS.copa);
+    modelosCargados.copa = MODELOS.copa;
+    console.log('Copa cargada (primera vez)');
+}
+
+// ==================================================
+// FUNCIÓN PARA ACTUALIZAR VISIBILIDAD SEGÚN LA PANTALLA
+// ==================================================
+function actualizarVisibilidadPorPantalla() {
+    if (!appState) return;
+    
+    const codigoPais = appState.code;
+    console.log('🔄 Actualizando visibilidad para pantalla:', document.getElementById('screenTitle').textContent, 'País:', codigoPais);
+    
+    // Seleccionar los elementos específicos de este país
+    const modeloPrincipal = document.querySelector(`.ar-model[data-pais="${codigoPais}"]`);
+    const estadioEl = document.getElementById('estadio-unico');
+    const copaEl = document.getElementById('copa-unica');
+    
+    // Ocultar todo primero
+    if (modeloPrincipal) {
+        modeloPrincipal.setAttribute('visible', 'false');
+        console.log('   Ocultando modelo principal');
+    }
+    if (estadioEl) {
+        estadioEl.setAttribute('visible', 'false');
+        console.log('   Ocultando estadio');
+    }
+    if (copaEl) {
+        copaEl.setAttribute('visible', 'false');
+        console.log('   Ocultando copa');
+    }
+    
+    // Mostrar según la pantalla actual
+    const screenType = document.getElementById('screenTitle').textContent.toLowerCase();
+    
+    if (screenType.includes('estadio')) {
+        if (estadioEl) {
+            estadioEl.setAttribute('visible', 'true');
+            console.log('Mostrando estadio en RA');
+        } else {
+            console.log('No se encontró el estadio');
+        }
+    } else if (screenType.includes('copa')) {
+        if (copaEl) {
+            copaEl.setAttribute('visible', 'true');
+            console.log('Mostrando copa en RA');
+        } else {
+            console.log('No se encontró la copa');
+        }
+    } else {
+        // Selección o galería - mostrar modelo principal
+        if (modeloPrincipal) {
+            modeloPrincipal.setAttribute('visible', 'true');
+            console.log('Mostrando modelo principal en RA');
+        }
+    }
+}
+
+// ==================================================
+// FUEGOS ARTIFICIALES
+// ==================================================
+function launchArFireworks(seedOverride) {
+    let seed = seedOverride || activeSeed;
+    const state = getState();
+    if (state) {
+        const country = MARKERS_CONFIG.find(c => c.code === state.code);
+        if (country && country.fireworkColors) {
+            seed = { colors: country.fireworkColors };
+        }
+    }
+
+    const sys  = window._arFireworksSystem;
+    if (!sys) { console.warn('Sistema de fuegos no listo'); return; }
+
+    let worldPos = new THREE.Vector3(0, 0.5, 0);
+
+    if (activeMarkerEl) {
+        const markerObj = activeMarkerEl.object3D;
+        if (markerObj.visible) {
+            markerObj.getWorldPosition(worldPos);
+            worldPos.y += 0.3;
+        }
+    }
+
+    const offsets = [
+        new THREE.Vector3(0,      0,    0),
+        new THREE.Vector3(-0.15,  0.1,  0.1),
+        new THREE.Vector3( 0.15,  0.2, -0.1)
+    ];
+
+    offsets.forEach((off, i) => {
+        setTimeout(() => {
+            const pos = worldPos.clone().add(off);
+            sys.launch(pos, seed, 350);
+        }, i * 160);
+    });
+}
+
+// ==================================================
+// TRIVIA / GALERÍA
+// ==================================================
+let triviaActive = false;
+let currentTrivia = { questions: [], currentQuestion: 0, score: 0, completed: false };
+let currentGallery = { media: [], currentIndex: 0 };
+
+function startTrivia(questions) {
+    if (!questions || !questions.length) return;
+    triviaActive = true;
+    currentTrivia = { questions, currentQuestion: 0, score: 0, completed: false };
+    document.querySelectorAll('a-marker').forEach(m => m.pause());
+    renderTrivia();
+}
+
+function renderTrivia() {
+    const container = document.getElementById('triviaContainer');
+    const content   = document.getElementById('triviaContent');
+    if (currentTrivia.completed) {
+        const pct = (currentTrivia.score / currentTrivia.questions.length * 100).toFixed(1);
+        content.innerHTML = `
+            <h2 style="color: var(--accent); text-align: center;">🎉 Trivia Completada 🎉</h2>
+            <div class="trivia-score">${currentTrivia.score}/${currentTrivia.questions.length} — ${pct}%</div>
+            <div class="trivia-progress"><div class="trivia-progress-bar" style="width:${pct}%"></div></div>
+            <button class="context-btn" onclick="closeTrivia()" style="width: 100%;">Cerrar</button>`;
+    } else {
+        const q   = currentTrivia.questions[currentTrivia.currentQuestion];
+        const pct = ((currentTrivia.currentQuestion + 1) / currentTrivia.questions.length * 100);
+        content.innerHTML = `
+            <h2 style="color: var(--accent); text-align: center;">🧠 Trivia</h2>
+            <div class="trivia-progress"><div class="trivia-progress-bar" style="width:${pct}%"></div></div>
+            <p class="trivia-question">Pregunta ${currentTrivia.currentQuestion + 1}/${currentTrivia.questions.length}:</p>
+            <p class="trivia-question" style="font-size: 20px; font-weight: bold;">${q.question}</p>
+            <div class="trivia-options">
+                ${q.options.map((o, i) => `<div class="trivia-option" onclick="answerTrivia(${i})">${o}</div>`).join('')}
+            </div>`;
+    }
+    container.classList.add('active');
+}
+
+function openGallery(media) {
+    if (!media || !media.length) return;
+    triviaActive = true;
+    currentGallery.media = media;
+    currentGallery.currentIndex = 0;
+    document.querySelectorAll('a-marker').forEach(m => m.pause());
+    renderGallery();
+}
+
+function renderGallery() {
+    const container = document.getElementById('triviaContainer');
+    const content   = document.getElementById('triviaContent');
+    const media = currentGallery.media;
+    const current = currentGallery.currentIndex;
+    
+    let slidesHtml = '';
+    media.forEach((item, index) => {
+        const activeClass = index === current ? 'active' : '';
+        if (item.type === 'image') {
+            slidesHtml += `<div class="carousel-slide ${activeClass}">
+                <img src="${item.url}" alt="${item.title || ''}" loading="lazy">
+                <div class="carousel-title">${item.title || ''}</div>
+            </div>`;
+        } else if (item.type === 'video') {
+            slidesHtml += `<div class="carousel-slide ${activeClass}">
+                <video src="${item.url}" controls ${index === current ? 'autoplay' : ''}></video>
+                <div class="carousel-title">${item.title || ''}</div>
+            </div>`;
+        }
+    });
+
+    let dotsHtml = '';
+    media.forEach((_, index) => {
+        dotsHtml += `<span class="carousel-dot ${index === current ? 'active' : ''}" onclick="changeGallerySlide(${index})"></span>`;
+    });
+
+    content.innerHTML = `
+        <h2 style="color: var(--accent); text-align: center;">📸 Galería</h2>
+        <div class="carousel-container">
+            ${slidesHtml}
+        </div>
+        <div class="carousel-controls">
+            <button class="carousel-btn" onclick="changeGallerySlide(${current - 1})" ${current === 0 ? 'disabled' : ''}>‹</button>
+            <span style="font-size: 16px; font-weight: bold;">${current + 1} / ${media.length}</span>
+            <button class="carousel-btn" onclick="changeGallerySlide(${current + 1})" ${current === media.length - 1 ? 'disabled' : ''}>›</button>
+        </div>
+        <div class="carousel-indicators">
+            ${dotsHtml}
+        </div>
+        <button class="context-btn" onclick="closeTrivia()" style="margin-top:20px; width:100%;">Cerrar</button>`;
+    
+    container.classList.add('active');
+}
+
+window.changeGallerySlide = function(index) {
+    if (index < 0 || index >= currentGallery.media.length) return;
+    currentGallery.currentIndex = index;
+    renderGallery();
+};
+
+window.answerTrivia = function(idx) {
+    const q = currentTrivia.questions[currentTrivia.currentQuestion];
+    document.querySelectorAll('.trivia-option').forEach(o => o.style.pointerEvents = 'none');
+    const opts = document.querySelectorAll('.trivia-option');
+    if (idx === q.correct) { opts[idx].classList.add('correct'); currentTrivia.score++; }
+    else { opts[idx].classList.add('incorrect'); opts[q.correct].classList.add('correct'); }
+    setTimeout(() => {
+        if (currentTrivia.currentQuestion < currentTrivia.questions.length - 1) {
+            currentTrivia.currentQuestion++;
+            renderTrivia();
+        } else { currentTrivia.completed = true; renderTrivia(); }
+    }, 1500);
+};
+
+window.closeTrivia = function() {
+    document.getElementById('triviaContainer').classList.remove('active');
+    triviaActive = false;
+    document.querySelectorAll('a-marker').forEach(m => m.play());
+};
+
+// ==================================================
+// INICIALIZACIÓN
+// ==================================================
+document.addEventListener('DOMContentLoaded', function () {
+    const arScene = document.querySelector('a-scene');
+
+    setupMarkerEvents();
+    setupUI();
+    setupKeyboardControls();
+    setupSeedSelector();
+
+    arScene.addEventListener('loaded', () => {
+        console.log('A-Frame escena cargada');
+    });
+
+    setTimeout(forceMainCamera, 1000);
+});
+
+// ==================================================
+// EVENTOS MARCADORES (MODIFICADO - MODELOS CARGADOS UNA VEZ)
+// ==================================================
+function setupMarkerEvents() {
+    MARKERS_CONFIG.forEach(cfg => {
+        const marker = document.getElementById(cfg.id);
+        if (!marker) return;
+
+        marker.addEventListener('markerFound', function () {
+            if (triviaActive) return;
+            
+            document.querySelectorAll('.ar-model').forEach(m => m.setAttribute('visible', 'false'));
+            
+            const model = document.getElementById(`model-${cfg.code}`);
+            if (model) {
+                model.setAttribute('visible', 'true');
+                model.setAttribute('rotation', '0 0 0');
+                
+                cargarBanderaAlModelo(model, cfg.code);
+                mejorarMateriales(model);
+                
+                // REPRODUCIR ANIMACIONES
+                reproducirAnimaciones(model);
+            }
+
+            activeMarkerEl = marker;
+
+            // Cargar estadio y copa (solo la primera vez que se necesitan)
+            cargarEstadio(cfg.code);
+            cargarCopa(cfg.code);
+
+            setState({ code: cfg.code, name: cfg.name, color: cfg.color,
+                       screens: cfg.screens.length ? cfg.screens : null });
+            document.getElementById('debugMarkerStatus').textContent = cfg.code + ' detectado';
+            document.getElementById('debugState').textContent        = cfg.code;
+            
+            // Actualizar visibilidad según pantalla actual
+            setTimeout(actualizarVisibilidadPorPantalla, 500);
+        });
+
+        marker.addEventListener('markerLost', function () {
+            if (triviaActive) return;
+            const model = document.getElementById(`model-${cfg.code}`);
+            if (model) model.setAttribute('visible', 'false');
+            activeMarkerEl = null;
+
+            const anyVisible = MARKERS_CONFIG.some(c => {
+                const m = document.getElementById(c.id);
+                return m && m.object3D.visible;
+            });
+            if (!anyVisible) {
+                setState(null);
+                document.getElementById('debugMarkerStatus').textContent = 'No detectado';
+                document.getElementById('debugState').textContent        = 'Ninguno';
+            }
+        });
+    });
+}
+
+// ==================================================
+// SELECTOR DE SEMILLA DE COLOR
+// ==================================================
+function setupSeedSelector() {
+    activeSeed = ColorSeed.RAINBOW;
+
+    document.querySelectorAll('.seed-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.seed-btn').forEach(b => b.classList.remove('active-seed'));
+            btn.classList.add('active-seed');
+            activeSeed = ColorSeed[btn.dataset.seed] || ColorSeed.RAINBOW;
+        });
+    });
+}
+
+// ==================================================
+// CAMARA PRINCIPAL
+// ==================================================
+function forceMainCamera() {
+    if (!navigator.mediaDevices) return;
+
+    const constraints = {
+        video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false
+    };
+
+    navigator.mediaDevices.getUserMedia(constraints)
+        .then(stream => {
+            const vid = document.querySelector('video');
+            if (vid) vid.srcObject = stream;
+            document.getElementById('debugCameraStatus').textContent = 'Principal';
+            setTimeout(() => {
+                document.getElementById('loading').style.opacity = '0';
+                setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
+            }, 1000);
+        })
+        .catch(() => {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+                .then(stream => {
+                    const vid = document.querySelector('video');
+                    if (vid) vid.srcObject = stream;
+                    document.getElementById('loading').style.display = 'none';
+                })
+                .catch(() => showError('No se pudo acceder a la camara'));
+        });
+}
+
+// ==================================================
+// UI
+// ==================================================
+function setupUI() {
+    const scanScreen  = document.getElementById('scanScreen');
+    const mainScreen  = document.getElementById('mainScreen');
+    const overlay     = document.getElementById('screenOverlay');
+    const actionBtn1  = document.getElementById('actionBtn1');
+    const actionBtn2  = document.getElementById('actionBtn2');
+    const popup       = document.getElementById('popup');
+    const popupText   = document.getElementById('popupText');
+    const closePopup  = document.getElementById('closePopup');
+    const screenTitle = document.getElementById('screenTitle');
+    const btnPrev     = document.getElementById('prevScreen');
+    const btnNext     = document.getElementById('nextScreen');
+    const filterMenu  = document.getElementById('filterMenu');
+    const filterTrack = document.getElementById('filterTrack');
+
+    const filters = [
+        { id: 'none', icon: '0️⃣', label: 'Normal' },
+        { id: 'pixel', icon: '🔲', label: 'Pixelado' },
+        { id: 'blur', icon: '🌀', label: 'Desenfoque' },
+        { id: 'brightness', icon: '☀️', label: 'Brillo' },
+        { id: 'heatmap', icon: '🔥', label: 'Mapa Calor' },
+        { id: 'glitch', icon: '⚡', label: 'Glitch' },
+        { id: 'edge', icon: '✏️', label: 'Bordes' }
+    ];
+    
+    let currentFilterIndex = 0;
+    let currentScreenIndex = 0;
+    let currentState = null;
+
+    function buildFilters() {
+        filterTrack.innerHTML = '';
+        filters.forEach((filter, i) => {
+            const div = document.createElement('div');
+            div.className = 'filter';
+            div.textContent = filter.icon;
+            div.title = filter.label;
+            div.onclick = () => { 
+                currentFilterIndex = i; 
+                applyFilter(filter.id);
+                updateFilters(); 
+            };
+            filterTrack.appendChild(div);
+        });
+        updateFilters();
+    }
+
+    function updateFilters() {
+        [...filterTrack.children].forEach((el, i) =>
+            el.classList.toggle('active', i === currentFilterIndex));
+    }
+
+    document.getElementById('openFilters').onclick  = () => filterMenu.classList.add('active');
+    document.getElementById('closeFilters').onclick = () => {
+        filterMenu.classList.remove('active');
+    };
+    closePopup.onclick = () => popup.classList.remove('active');
+
+    function setAccent(c) { document.documentElement.style.setProperty('--accent', c); }
+    function showPopup(t) { popupText.textContent = t; popup.classList.add('active'); }
+
+    document.getElementById('fireworksBtn').addEventListener('click', () => {
+        launchArFireworks();
+    });
+
+    function loadScreenContent() {
+        if (!currentState) return;
+
+        if (!currentState.screens || !currentState.screens.length) {
+            overlay.innerHTML = `<h2>${currentState.name}</h2><p>Marcador detectado pero sin contenido</p>`;
+            screenTitle.textContent = 'Sin Datos';
+            setAccent('#888888');
+            actionBtn1.style.display = actionBtn2.style.display = 'none';
+            return;
+        }
+
+        actionBtn1.style.display = actionBtn2.style.display = 'block';
+        const screens = currentState.screens;
+        const screen  = screens[currentScreenIndex] || screens[0];
+        screenTitle.textContent = screen.name;
+        setAccent(screen.color || currentState.color || '#b2ff24');
+
+        // Actualizar visibilidad en RA según la nueva pantalla
+        actualizarVisibilidadPorPantalla();
+
+        switch (screen.type) {
+            case 'selection':
+                overlay.innerHTML = `<h2>${currentState.name}</h2><p>${screen.content}</p>`;
+                actionBtn1.textContent = 'Iniciar'; actionBtn2.textContent = 'Info';
+                actionBtn1.onclick = () => showPopup(`Iniciando ${currentState.code}`);
+                actionBtn2.onclick = () => showPopup(`Info de ${currentState.name}`);
+                break;
+            case 'gallery':
+                overlay.innerHTML = `<h2>Galería ${currentState.name}</h2><p>${screen.content}</p>`;
+                actionBtn1.textContent = 'Ver Carrusel'; actionBtn2.textContent = 'Info';
+                actionBtn1.onclick = () => {
+                    if (screen.media?.length) openGallery(screen.media);
+                    else showPopup('No hay medios disponibles');
+                };
+                actionBtn2.onclick = () => showPopup('Galería de imágenes y videos del país');
+                break;
+            case 'stadium':
+                overlay.innerHTML = `<h2>Estadio ${currentState.name}</h2><p>${screen.content}</p>
+                    <div style="margin-top:10px;text-align:center">
+                        <p>🏟️ Estadio: ${screen.info?.estadio?.toUpperCase() || 'Desconocido'}</p>
+                        <p style="color: var(--accent); font-size: 18px;">¡EL ESTADIO YA ESTÁ VISIBLE EN RA! </p>
+                    </div>`;
+                actionBtn1.textContent = 'Info'; actionBtn2.textContent = '← Atrás';
+                actionBtn1.onclick = () => showPopup(`Estadio ${screen.info?.estadio}`);
+                actionBtn2.onclick = () => {
+                    currentScreenIndex = (currentScreenIndex - 1 + screens.length) % screens.length;
+                    loadScreenContent();
+                };
+                break;
+            case 'cup':
+                overlay.innerHTML = `<h2>Copa ${currentState.name}</h2><p>${screen.content}</p>`;
+                if (screen.info?.año) {
+                    overlay.innerHTML += `<div style="margin-top:10px">📅 Año: ${screen.info.año}</div>`;
+                }
+                overlay.innerHTML += `<p style="color: var(--accent); font-size: 18px; margin-top:10px;">¡LA COPA YA ESTÁ VISIBLE EN RA!</p>`;
+                actionBtn1.textContent = 'Info'; actionBtn2.textContent = '← Atrás';
+                actionBtn1.onclick = () => showPopup(screen.info?.mensaje || 'Información de la copa');
+                actionBtn2.onclick = () => {
+                    currentScreenIndex = (currentScreenIndex - 1 + screens.length) % screens.length;
+                    loadScreenContent();
+                };
+                break;
+            case 'trivia':
+                overlay.innerHTML = `<h2>Trivia ${currentState.name}</h2><p>${screen.content}</p>
+                    <p style="margin-top:10px"> ${screen.questions?.length || 0} preguntas disponibles</p>`;
+                actionBtn1.textContent = '🎮 JUGAR'; actionBtn2.textContent = '← Atrás';
+                actionBtn1.onclick = () => {
+                    if (screen.questions?.length) startTrivia(screen.questions);
+                    else showPopup('No hay preguntas disponibles');
+                };
+                actionBtn2.onclick = () => {
+                    currentScreenIndex = (currentScreenIndex - 1 + screens.length) % screens.length;
+                    loadScreenContent();
+                };
+                break;
+            default:
+                overlay.innerHTML = `<h2>${screen.name}</h2><p>${screen.content || ''}</p>`;
+        }
+        updateFilters();
+    }
+
+    btnNext.onclick = () => {
+        if (!currentState?.screens?.length) return;
+        currentScreenIndex = (currentScreenIndex + 1) % currentState.screens.length;
+        loadScreenContent();
+    };
+    btnPrev.onclick = () => {
+        if (!currentState?.screens?.length) return;
+        currentScreenIndex = (currentScreenIndex - 1 + currentState.screens.length) % currentState.screens.length;
+        loadScreenContent();
+    };
+
+    subscribe(state => {
+        if (!state?.code) {
+            if (currentState !== null) {
+                currentState = null;
+                scanScreen.classList.add('active');
+                mainScreen.classList.remove('active');
+                setAccent('#b2ff24');
+            }
+            return;
+        }
+        if (!currentState || state.code !== currentState.code) {
+            currentState = state;
+            currentScreenIndex = 0;
+        }
+        scanScreen.classList.remove('active');
+        mainScreen.classList.add('active');
+        loadScreenContent();
+    });
+
+    buildFilters();
+}
+
+// ==================================================
+// TECLADO
+// ==================================================
+function setupKeyboardControls() {
+    document.addEventListener('keydown', e => {
+        if (e.key === 'd' || e.key === 'D') document.getElementById('debugPanel').classList.toggle('show');
+        if (e.key === 'r' || e.key === 'R') location.reload();
+        if (e.key === 'f' || e.key === 'F') launchArFireworks();
+
+        const seedKeys = { '1': 'RED', '2': 'BLUE', '3': 'GREEN', '4': 'GOLD', '5': 'RAINBOW' };
+        if (seedKeys[e.key]) {
+            activeSeed = ColorSeed[seedKeys[e.key]];
+            document.querySelectorAll('.seed-btn').forEach(b => {
+                b.classList.toggle('active-seed', b.dataset.seed === seedKeys[e.key]);
+            });
+        }
+
+        if (e.key >= '6' && e.key <= '9') {
+            const idx = parseInt(e.key) - 1;
+            if (idx < MARKERS_CONFIG.length) {
+                const m = document.getElementById(MARKERS_CONFIG[idx].id);
+                if (m) m.dispatchEvent(new CustomEvent('markerFound'));
+            }
+        }
+    });
+}
+
+// ==================================================
+// UTILIDADES
+// ==================================================
+function showError(msg) {
+    document.getElementById('errorText').textContent = msg;
+    document.getElementById('errorMessage').classList.add('show');
+    document.getElementById('loading').style.display = 'none';
+}
+
+window.getState          = getState;
+window.setState          = setState;
+window.MARKERS_CONFIG    = MARKERS_CONFIG;
+window.launchArFireworks = launchArFireworks;
+window.ColorSeed         = ColorSeed;
+window.PAISES_CONFIG     = PAISES_CONFIG;
+window.MODELOS           = MODELOS;
+
+console.log('MundiAR listo — Modelos optimizados: SOLO 12 instancias totales (10 bases + 1 estadio + 1 copa)');
+</script>
+</body>
+</html>
