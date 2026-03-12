@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Información del país</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+</head>
+<body style="background-color: #060914 ;">
+  <main class="container-fluid min-vh-100 text-light py-4 py-md-5">
+    <div class="row justify-content-center">
+      <div class="col-12 col-sm-11 col-md-8 col-lg-5 col-xl-4">
+
+        <div class="d-flex justify-content-start mb-4">
+          <button id="backBtn" type="button" class="btn btn-danger rounded-pill fw-semibold px-4 py-2 shadow">
+            Regresar
+          </button>
+        </div>
+
+        <section id="countryInfo" class="text-center">
+          <h1 id="countryName" class="display-5 fw-semibold mb-4">México</h1>
+
+          <div class="mb-4">
+            <img
+              id="countryFlag"
+              src="./assets/MEX/image.jpg"
+              alt="Bandera del país"
+              class="img-fluid rounded-4 shadow w-100"
+            >
+          </div>
+
+          <section class="px-2 px-md-4 mb-5">
+            <h2 class="fw-semibold mb-3">Información</h2>
+            <p id="countryDescription" class="fs-5 lh-lg mb-0">
+              Lorem ipsum dolor sit amet consectetur adipisicing elit. Earum, veritatis assumenda.
+            </p>
+          </section>
+
+<section class="mb-5">
+  <div id="countryCarousel" class="carousel slide" data-bs-ride="false">
+    <div class="carousel-indicators">
+      <button type="button" data-bs-target="#countryCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+      <button type="button" data-bs-target="#countryCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+      <button type="button" data-bs-target="#countryCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+    </div>
+
+    <div class="carousel-inner rounded-4 shadow overflow-hidden">
+      <div class="carousel-item active">
+        <img id="carouselImg1" src="./assets/MEX/image.jpg" class="d-block w-100 img-fluid" alt="Media 1 del país">
+        <video id="carouselVideo1" class="d-none w-100 img-fluid" controls playsinline preload="metadata">
+          <source src="" type="video/mp4">
+        </video>
+      </div>
+
+      <div class="carousel-item">
+        <img id="carouselImg2" src="./assets/ARG/image.jpg" class="d-block w-100 img-fluid" alt="Media 2 del país">
+        <video id="carouselVideo2" class="d-none w-100 img-fluid" controls playsinline preload="metadata">
+          <source src="" type="video/mp4">
+        </video>
+      </div>
+
+      <div class="carousel-item">
+        <img id="carouselImg3" src="./assets/COL/image.jpg" class="d-block w-100 img-fluid" alt="Media 3 del país">
+        <video id="carouselVideo3" class="d-none w-100 img-fluid" controls playsinline preload="metadata">
+          <source src="" type="video/mp4">
+        </video>
+      </div>
+    </div>
+
+    <button class="carousel-control-prev" type="button" data-bs-target="#countryCarousel" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">Previous</span>
+    </button>
+
+    <button class="carousel-control-next" type="button" data-bs-target="#countryCarousel" data-bs-slide="next">
+      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">Next</span>
+    </button>
+  </div>
+</section>
+        </section>
+
+        <section id="notFound" class="text-center py-5" hidden>
+          <h1 class="display-6 fw-semibold mb-3">País no encontrado</h1>
+          <p class="text-secondary mb-4">El parámetro recibido no corresponde a un país válido.</p>
+          <button type="button" class="btn btn-danger rounded-pill px-4" onclick="window.history.back()">← Regresar</button>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const PAISES_CONFIG = {
+    ARG: {
+        nombre: 'Argentina',
+        bandera: './assets/ARG/image.jpg',
+        descripcion: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Argentina placeholder.',
+        galeria: [
+        { type: 'image', src: './assets/ARG/image.jpg' },
+        { type: 'video', src: './assets/ARG/video.mp4' },
+        { type: 'image', src: './assets/ARG/image.jpg' }
+        ]
+    },
+    COL: {
+        nombre: 'Colombia',
+        bandera: './assets/COL/image.jpg',
+        descripcion: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Colombia placeholder.',
+        galeria: [
+        { type: 'image', src: './assets/COL/image.jpg' },
+        { type: 'video', src: './assets/COL/video.mp4' },
+        { type: 'image', src: './assets/COL/image.jpg' }
+        ]
+    },
+    ESP: {
+        nombre: 'España',
+        bandera: './assets/ESP/image.jpg',
+        descripcion: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. España placeholder.',
+        galeria: [
+        { type: 'image', src: './assets/ESP/image.jpg' },
+        { type: 'video', src: './assets/ESP/video.mp4' },
+        { type: 'image', src: './assets/ESP/image.jpg' }
+        ]
+    },
+    FRA: {
+        nombre: 'Francia',
+        bandera: './assets/FRA/image.jpg',
+        descripcion: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Francia placeholder.',
+        galeria: [
+        { type: 'image', src: './assets/FRA/image.jpg' },
+        { type: 'video', src: './assets/FRA/video.mp4' },
+        { type: 'image', src: './assets/FRA/image.jpg' }
+        ]
+    },
+    JPN: {
+        nombre: 'Japón',
+        bandera: './assets/JPN/image.jpg',
+        descripcion: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Japón placeholder.',
+        galeria: [
+        { type: 'image', src: './assets/JPN/image.jpg' },
+        { type: 'video', src: './assets/JPN/video.mp4' },
+        { type: 'image', src: './assets/JPN/image.jpg' }
+        ]
+    },
+    KOR: {
+        nombre: 'Corea del Sur',
+        bandera: './assets/KOR/image.jpg',
+        descripcion: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Corea del Sur placeholder.',
+        galeria: [
+        { type: 'image', src: './assets/KOR/image.jpg' },
+        { type: 'video', src: './assets/KOR/video.mp4' },
+        { type: 'image', src: './assets/KOR/image.jpg' }
+        ]
+    },
+    MEX: {
+        nombre: 'México',
+        bandera: './assets/MEX/image.jpg',
+        descripcion: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Class tempor sed curae habitant etiam, himenaeos leo inceptos urna conubia nostra.',
+        galeria: [
+        { type: 'image', src: './assets/MEX/image.jpg' },
+        { type: 'video', src: './assets/MEX/video.mp4' },
+        { type: 'image', src: './assets/MEX/image.jpg' }
+        ]
+    },
+    POR: {
+        nombre: 'Portugal',
+        bandera: './assets/POR/image.jpg',
+        descripcion: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Portugal placeholder.',
+        galeria: [
+        { type: 'image', src: './assets/POR/image.jpg' },
+        { type: 'video', src: './assets/POR/video.mp4' },
+        { type: 'image', src: './assets/POR/image.jpg' }
+        ]
+    },
+    TUN: {
+        nombre: 'Túnez',
+        bandera: './assets/TUN/image.jpg',
+        descripcion: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Túnez placeholder.',
+        galeria: [
+        { type: 'image', src: './assets/TUN/image.jpg' },
+        { type: 'video', src: './assets/TUN/video.mp4' },
+        { type: 'image', src: './assets/TUN/image.jpg' }
+        ]
+    },
+    URY: {
+        nombre: 'Uruguay',
+        bandera: './assets/URY/image.jpg',
+        descripcion: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Uruguay placeholder.',
+        galeria: [
+        { type: 'image', src: './assets/URY/image.jpg' },
+        { type: 'video', src: './assets/URY/video.mp4' },
+        { type: 'image', src: './assets/URY/image.jpg' }
+        ]
+    }
+    };
+function getCountryCodeFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return (params.get('pais') || '').toUpperCase().trim();
+  }
+
+  function setCarouselMedia(slot, media, countryName) {
+    const img = document.getElementById(`carouselImg${slot}`);
+    const video = document.getElementById(`carouselVideo${slot}`);
+    const source = video.querySelector('source');
+
+    if (!media || media.type === 'image') {
+      img.src = media?.src || `./assets/${countryName}/image.jpg`;
+      img.alt = `${countryName} imagen ${slot}`;
+      img.classList.remove('d-none');
+
+      source.src = '';
+      video.load();
+      video.pause();
+      video.classList.add('d-none');
+      return;
+    }
+
+    if (media.type === 'video') {
+      img.classList.add('d-none');
+
+      source.src = media.src;
+      video.load();
+      video.classList.remove('d-none');
+    }
+  }
+
+  function pauseAllCarouselVideos() {
+    const videos = document.querySelectorAll('#countryCarousel video');
+    videos.forEach(video => {
+      video.pause();
+    });
+  }
+
+  function renderCountryInfo() {
+    const code = getCountryCodeFromUrl();
+    const country = PAISES_CONFIG[code];
+
+    const countryInfo = document.getElementById('countryInfo');
+    const notFound = document.getElementById('notFound');
+
+    if (!country) {
+      countryInfo.hidden = true;
+      notFound.hidden = false;
+      return;
+    }
+
+    document.getElementById('countryName').textContent = country.nombre;
+    document.getElementById('countryFlag').src = country.bandera;
+    document.getElementById('countryFlag').alt = `Bandera de ${country.nombre}`;
+    document.getElementById('countryDescription').textContent =
+      country.descripcion || 'Sin descripción disponible.';
+
+    const gallery = country.galeria || [
+      { type: 'image', src: country.bandera },
+      { type: 'video', src: `./assets/${code}/video.mp4` },
+      { type: 'image', src: country.bandera }
+    ];
+
+    setCarouselMedia(1, gallery[0], country.nombre);
+    setCarouselMedia(2, gallery[1], country.nombre);
+    setCarouselMedia(3, gallery[2], country.nombre);
+  }
+
+  document.getElementById('backBtn').addEventListener('click', () => {
+    window.history.back();
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    renderCountryInfo();
+
+    const carouselElement = document.getElementById('countryCarousel');
+    if (carouselElement) {
+      carouselElement.addEventListener('slide.bs.carousel', () => {
+        pauseAllCarouselVideos();
+      });
+    }
+  });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+</body>
+</html>

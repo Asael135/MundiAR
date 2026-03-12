@@ -4,10 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>MundiAR - Realidad Aumentada</title>
-    
+    <link rel="stylesheet" href="./style.css" />
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.0/aframe/build/aframe-ar.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <!-- Three.js addons para EffectComposer/Bloom (misma versión que usa A-Frame 1.4) -->
     <script src="https://unpkg.com/three@0.146.0/examples/js/postprocessing/EffectComposer.js"></script>
     <script src="https://unpkg.com/three@0.146.0/examples/js/postprocessing/RenderPass.js"></script>
@@ -15,320 +14,6 @@
     <script src="https://unpkg.com/three@0.146.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
     <script src="https://unpkg.com/three@0.146.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
     <script src="https://unpkg.com/three@0.146.0/examples/js/shaders/CopyShader.js"></script>
-
-   
-
-    <style>
-        :root { --accent: #b2ff24; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; }
-        body { background: #111; color: white; overflow: hidden; }
-
-        .screen { position: fixed; inset: 0; display: none; z-index: 10; }
-        .screen.active { display: flex; justify-content: center; align-items: center; flex-direction: column; animation: screenAppear 0.5s ease; }
-        @keyframes screenAppear { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-
-        .scan-box { width: 220px; height: 220px; border: 3px solid var(--accent); border-radius: 20px; animation: pulse 2s infinite; }
-        .scan-text { margin-top: 20px; font-size: 22px; color: var(--accent); }
-        @keyframes pulse { 0% { box-shadow: 0 0 6px var(--accent); } 50% { box-shadow: 0 0 20px var(--accent); } 100% { box-shadow: 0 0 6px var(--accent); } }
-
-        .top-bar { position: absolute; top: 10px; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; animation: slideDown 0.4s ease; z-index: 25; }
-        @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        #screenTitle { padding: 8px 25px; border-radius: 20px; font-size: 18px; background: var(--accent); color: black; transition: transform 0.2s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
-        #screenTitle:hover { transform: scale(1.05); }
-
-        .nav-btn { background: var(--accent); border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; color: black; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.3s ease; flex-shrink: 0; }
-        .nav-btn:hover { transform: scale(1.1); box-shadow: 0 0 15px var(--accent); }
-        .nav-btn:active { transform: scale(0.9); }
-
-        .content-area { flex: 1; width: 100%; }
-
-        .menu-btn { position: absolute; bottom: 20px; right: 20px; background: var(--accent); border: none; border-radius: 50%; width: 55px; height: 55px; font-size: 22px; color: black; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.3s ease; z-index: 30; }
-        .menu-btn:hover { transform: scale(1.1) rotate(90deg); box-shadow: 0 0 20px var(--accent); }
-
-        .filter-menu { position: absolute; left: 0; right: 0; bottom: -300px; height: 300px; background: rgba(0,0,0,0.96); border-top-left-radius: 28px; border-top-right-radius: 28px; transition: bottom 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); display: flex; flex-direction: column; align-items: center; padding-top: 25px; z-index: 40; backdrop-filter: blur(10px); }
-        .filter-menu.active { bottom: 0; }
-
-        .close-menu { position: absolute; top: 10px; right: 15px; background: var(--accent); border: none; width: 28px; height: 28px; border-radius: 50%; font-size: 14px; color: black; cursor: pointer; transition: transform 0.2s ease; }
-        .close-menu:hover { transform: rotate(90deg); }
-
-        .filter-track { margin-top: 60px; display: flex; gap: 15px; overflow-x: auto; padding: 10px 20px 30px 20px; width: 100%; scroll-snap-type: x mandatory; align-items: center; }
-        .filter-track::-webkit-scrollbar { display: none; }
-
-        .filter { min-width: 70px; height: 70px; border-radius: 50%; background: var(--accent); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; color: black; border: 4px solid transparent; transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; cursor: pointer; }
-        .filter:hover { transform: scale(1.1); }
-        .filter.active { border-color: white; box-shadow: 0 0 20px var(--accent); transform: scale(1.15); animation: filterPulse 2s infinite; }
-        @keyframes filterPulse { 0% { box-shadow: 0 0 10px var(--accent); } 50% { box-shadow: 0 0 25px var(--accent); } 100% { box-shadow: 0 0 10px var(--accent); } }
-
-        .screen-overlay { 
-            position: absolute; 
-            top: 80px; 
-            left: 15px; 
-            right: 15px; 
-            padding: 20px; 
-            background: rgba(0,0,0,0.8); 
-            border: 2px solid var(--accent); 
-            border-radius: 15px; 
-            text-align: center; 
-            font-size: 16px; 
-            backdrop-filter: blur(10px); 
-            z-index: 15; 
-            animation: overlayAppear 0.4s ease;
-            max-height: calc(100vh - 250px);
-            overflow-y: auto;
-        }
-        .screen-overlay:hover { box-shadow: 0 0 20px var(--accent); }
-        @keyframes overlayAppear { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-
-        .context-buttons { 
-            position: absolute; 
-            bottom: 90px; 
-            left: 0; 
-            right: 0; 
-            display: flex; 
-            justify-content: center; 
-            gap: 15px; 
-            z-index: 20; 
-            animation: buttonsAppear 0.5s ease;
-            flex-wrap: wrap;
-            padding: 0 15px;
-        }
-        @keyframes buttonsAppear { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        .context-btn { 
-            background: var(--accent); 
-            border: none; 
-            padding: 12px 20px; 
-            border-radius: 30px; 
-            font-size: 14px; 
-            color: black; 
-            font-weight: bold; 
-            cursor: pointer; 
-            transition: transform 0.2s ease, box-shadow 0.3s ease;
-            min-width: 110px;
-            white-space: nowrap;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        .context-btn:hover { transform: scale(1.05); box-shadow: 0 0 15px var(--accent); }
-        .context-btn:active { transform: scale(0.95); }
-
-        .popup { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(5px); }
-        .popup.active { display: flex; animation: popupFadeIn 0.3s ease; }
-        @keyframes popupFadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .popup-content { background: #111; border: 2px solid var(--accent); padding: 30px; border-radius: 20px; text-align: center; width: 100%; max-width: 400px; margin: 0 20px; animation: popupScale 0.3s ease; }
-        @keyframes popupScale { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        #closePopup { background: var(--accent); border: none; padding: 10px 20px; border-radius: 20px; margin-top: 15px; cursor: pointer; font-weight: bold; transition: transform 0.2s ease; }
-        #closePopup:hover { transform: scale(1.05); }
-
-        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; transition: opacity 0.5s ease; }
-        .loader { width: 60px; height: 60px; border: 4px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: var(--accent); animation: spin 1s linear infinite; margin-bottom: 20px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-info { margin-top: 20px; font-size: 14px; color: #aaa; text-align: center; }
-
-        .debug-panel { position: fixed; top: 20px; right: 20px; background: rgba(0,0,0,0.95); color: #0f0; padding: 15px; border-radius: 5px; font-family: 'Courier New', monospace; font-size: 12px; z-index: 1000; display: none; max-width: 300px; pointer-events: none; border: 1px solid #0f0; }
-        .debug-panel.show { display: block; }
-
-        .instructions { position: fixed; bottom: 10px; left: 0; width: 100%; text-align: center; color: white; background: rgba(0,0,0,0.7); padding: 8px; z-index: 5; font-size: 11px; pointer-events: none; backdrop-filter: blur(5px); }
-
-        .error-message { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 50, 50, 0.95); color: white; padding: 20px; border-radius: 10px; z-index: 10000; text-align: center; display: none; }
-        .error-message.show { display: block; }
-        .reload-btn { margin-top: 10px; padding: 10px 20px; background: white; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
-
-        .a-scene { position: fixed !important; inset: 0 !important; z-index: 1 !important; }
-        .screen.active { pointer-events: auto; }
-        .context-buttons, .menu-btn, .filter-menu, .nav-btn, #closePopup, .reload-btn { pointer-events: auto; }
-
-        /* Fireworks button - responsive */
-        .fireworks-btn {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: var(--accent);
-            border: none;
-            padding: 10px 15px;
-            border-radius: 30px;
-            font-size: 14px;
-            color: black;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.3s ease;
-            z-index: 25;
-            white-space: nowrap;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        @media (min-width: 768px) {
-            .fireworks-btn { padding: 12px 20px; font-size: 15px; }
-        }
-        .fireworks-btn:hover { transform: scale(1.05); box-shadow: 0 0 20px var(--accent); }
-        .fireworks-btn:active { transform: scale(0.95); }
-
-        /* Seed selector - responsive */
-        .seed-selector {
-            position: absolute;
-            bottom: 80px;
-            left: 20px;
-            display: flex;
-            gap: 8px;
-            z-index: 25;
-            animation: buttonsAppear 0.4s ease;
-            flex-wrap: wrap;
-            max-width: 200px;
-        }
-        .seed-btn {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.4);
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            flex-shrink: 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-        @media (min-width: 768px) {
-            .seed-btn { width: 35px; height: 35px; }
-        }
-        .seed-btn.active-seed {
-            border-color: white;
-            transform: scale(1.15);
-            box-shadow: 0 0 12px currentColor;
-        }
-
-        /* Trivia / Galería mejorado */
-        .trivia-container { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0,0,0,0.98); 
-            z-index: 2000; 
-            display: none; 
-            justify-content: center; 
-            align-items: center; 
-            padding: 15px; 
-        }
-        .trivia-container.active { display: flex; }
-        .trivia-container .trivia-content { 
-            background: linear-gradient(145deg, #1a1a1a, #111);
-            border: 2px solid var(--accent); 
-            border-radius: 25px; 
-            padding: 20px; 
-            max-width: 600px; 
-            width: 100%; 
-            max-height: 85vh; 
-            overflow-y: auto; 
-            box-shadow: 0 0 30px rgba(178, 255, 36, 0.2);
-        }
-        .trivia-question { font-size: 18px; margin-bottom: 20px; line-height: 1.4; }
-        .trivia-options { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
-        .trivia-option { background: rgba(255,255,255,0.1); border: 1px solid var(--accent); padding: 14px; border-radius: 12px; cursor: pointer; transition: all 0.2s ease; }
-        .trivia-option:hover { background: var(--accent); color: black; transform: scale(1.02); }
-        .trivia-option.correct { background: #4caf50; border-color: #4caf50; color: white; }
-        .trivia-option.incorrect { background: #f44336; border-color: #f44336; color: white; }
-        .trivia-score { font-size: 28px; font-weight: bold; color: var(--accent); margin: 20px 0; }
-        .trivia-progress { width: 100%; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; margin: 15px 0; overflow: hidden; }
-        .trivia-progress-bar { height: 100%; background: var(--accent); transition: width 0.3s ease; }
-
-        /* Carrusel mejorado - más vistoso */
-        .carousel-container {
-            position: relative;
-            width: 100%;
-            margin: 20px 0;
-            border-radius: 20px;
-            overflow: hidden;
-            background: #000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .carousel-slide {
-            display: none;
-            width: 100%;
-            text-align: center;
-            background: linear-gradient(45deg, #222, #000);
-            padding: 10px 0;
-        }
-        .carousel-slide.active {
-            display: block;
-            animation: zoomEffect 0.5s ease;
-        }
-        @keyframes zoomEffect { 
-            from { opacity: 0.4; transform: scale(0.95); } 
-            to { opacity: 1; transform: scale(1); } 
-        }
-        .carousel-slide img, .carousel-slide video {
-            width: 100%;
-            max-height: 300px;
-            object-fit: contain;
-            border-radius: 15px;
-            background: #000;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        }
-        .carousel-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 15px;
-            gap: 10px;
-        }
-        .carousel-btn {
-            background: var(--accent);
-            border: none;
-            color: black;
-            font-size: 22px;
-            font-weight: bold;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            flex-shrink: 0;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        .carousel-btn:hover { transform: scale(1.1); box-shadow: 0 0 20px var(--accent); }
-        .carousel-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        .carousel-indicators {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin: 15px 0;
-        }
-        .carousel-dot {
-            width: 14px;
-            height: 14px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 50%;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 2px solid var(--accent);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-        .carousel-dot.active {
-            background: var(--accent);
-            transform: scale(1.3);
-            box-shadow: 0 0 15px var(--accent);
-        }
-        .carousel-title {
-            font-size: 18px;
-            margin: 10px 0;
-            color: var(--accent);
-            font-weight: bold;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 480px) {
-            .context-buttons { bottom: 100px; gap: 10px; }
-            .context-btn { padding: 10px 12px; min-width: 90px; font-size: 13px; }
-            .fireworks-btn { bottom: 15px; left: 15px; padding: 8px 12px; font-size: 12px; }
-            .seed-selector { bottom: 70px; left: 15px; max-width: 160px; }
-            .seed-btn { width: 28px; height: 28px; }
-            .screen-overlay { top: 70px; padding: 15px; font-size: 14px; }
-        }
-    </style>
 </head>
 <body>
 
@@ -403,15 +88,16 @@
 <!-- A-FRAME SCENE -->
 <a-scene 
     id="arScene"
+    mindar-image="imageTargetSrc: ./assets/targets.mind; uiLoading: no; uiScanning: no; uiError: no; filterMinCF: 0.0001; filterBeta: 0.001;"
     embedded
-    vr-mode-ui="enabled: false"
-    arjs="sourceType: webcam; sourceWidth: 1280; sourceHeight: 720; displayWidth: 1280; displayHeight: 720; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; maxDetectionRate: 30; patternRatio: 0.5; trackingMethod: best;"
+    color-space="sRGB"
     renderer="logarithmicDepthBuffer: true; antialias: true; physicallyCorrectLights: true; colorManagement: true; exposure: 2.0;"
-    loading-screen="enabled: false;"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
     ar-fireworks-system>
     
-    <a-entity camera position="0 0 0" look-controls="enabled: false"></a-entity>
-    
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>  
+     
     <!-- LUCES -->
     <a-light type="ambient" color="#FFFFFF" intensity="1.0"></a-light>
     <a-light type="directional" color="#FFFFFF" intensity="2.0" position="2 3 2"></a-light>
@@ -421,45 +107,45 @@
     
     <!-- MARCADORES -->
     
-    <a-marker id="marker-ARG" type="pattern" url="assets/arg/arg.patt" size="0.15" smooth="true" smoothCount="5" smoothTolerance="0.05" emitevents="true">
+    <a-entity id="marker-ARG"  emitevents="true" mindar-image-target="targetIndex: 3">
         <a-entity id="model-ARG" class="ar-model" data-pais="ARG" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
-    </a-marker>
+    </a-entity>
 
-    <a-marker id="marker-COL" type="pattern" url="assets/col/col.patt" size="0.15" smooth="true" emitevents="true">
+    <a-entity id="marker-COL"  emitevents="true" mindar-image-target="targetIndex: 2">
         <a-entity id="model-COL" class="ar-model" data-pais="COL" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
-    </a-marker>
+    </a-entity>
 
-    <a-marker id="marker-ESP" type="pattern" url="assets/esp/esp.patt" size="0.15" smooth="true" emitevents="true">
+    <a-entity id="marker-ESP"  emitevents="true" mindar-image-target="targetIndex: 1">
         <a-entity id="model-ESP" class="ar-model" data-pais="ESP" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
-    </a-marker>
+    </a-entity>
 
-    <a-marker id="marker-FRA" type="pattern" url="assets/fra/fra.patt" size="0.15" smooth="true" emitevents="true">
+    <a-entity id="marker-FRA" emitevents="true" mindar-image-target="targetIndex: 0">
         <a-entity id="model-FRA" class="ar-model" data-pais="FRA" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
-    </a-marker>
+    </a-entity>
 
-    <a-marker id="marker-JPN" type="pattern" url="assets/jpn/jpn.patt" size="0.15" smooth="true" emitevents="true">
+    <a-entity id="marker-JPN" emitevents="true" mindar-image-target="targetIndex: 9">
         <a-entity id="model-JPN" class="ar-model" data-pais="JPN" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
-    </a-marker>
+   </a-entity>
 
-    <a-marker id="marker-KOR" type="pattern" url="assets/kor/kor.patt" size="0.15" smooth="true" emitevents="true">
+    <a-entity id="marker-KOR"  emitevents="true" mindar-image-target="targetIndex: 8">
         <a-entity id="model-KOR" class="ar-model" data-pais="KOR" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
-    </a-marker>
+    </a-entity>
 
-    <a-marker id="marker-MEX" type="pattern" url="assets/mex/mex.patt" size="0.15" smooth="true" emitevents="true">
+    <a-entity id="marker-MEX" emitevents="true" mindar-image-target="targetIndex: 4">
         <a-entity id="model-MEX" class="ar-model" data-pais="MEX" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
-    </a-marker>
+    </a-entity>
 
-    <a-marker id="marker-POR" type="pattern" url="assets/por/por.patt" size="0.15" smooth="true" emitevents="true">
+    <a-entity id="marker-POR"  emitevents="true" mindar-image-target="targetIndex: 7">
         <a-entity id="model-POR" class="ar-model" data-pais="POR" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
-    </a-marker>
+    </a-entity>
 
-    <a-marker id="marker-TUN" type="pattern" url="assets/tun/tun.patt" size="0.15" smooth="true" emitevents="true">
+    <a-entity id="marker-TUN" emitevents="true" mindar-image-target="targetIndex: 5">
         <a-entity id="model-TUN" class="ar-model" data-pais="TUN" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
-    </a-marker>
+    </a-entity>
 
-    <a-marker id="marker-URY" type="pattern" url="assets/ury/ury.patt" size="0.15" smooth="true" emitevents="true">
+    <a-entity id="marker-URY" emitevents="true" mindar-image-target="targetIndex: 6">
         <a-entity id="model-URY" class="ar-model" data-pais="URY" gltf-model="assets/base.glb" position="0 0 0" rotation="0 0 0" scale="1.5 1.5 1.5" visible="false"></a-entity>
-    </a-marker>
+    </a-entity>
 
     <!-- MODELOS ÚNICOS -->
     <a-entity id="estadio-unico" class="estadio-model" gltf-model="" position="0 0 0" scale="0.4 0.4 0.4" visible="false"></a-entity>
@@ -1324,55 +1010,34 @@ function cargarCopa(codigoPais) {
 // ==================================================
 function actualizarVisibilidadPorPantalla() {
     if (!appState) return;
-    
+
     const codigoPais = appState.code;
-    console.log('🔄 Actualizando visibilidad para pantalla:', document.getElementById('screenTitle').textContent, 'País:', codigoPais);
-    
-    // Seleccionar los elementos específicos de este país
     const modeloPrincipal = document.querySelector(`.ar-model[data-pais="${codigoPais}"]`);
     const estadioEl = document.getElementById('estadio-unico');
     const copaEl = document.getElementById('copa-unica');
-    
+
     // Ocultar todo primero
-    if (modeloPrincipal) {
-        modeloPrincipal.setAttribute('visible', 'false');
-        console.log('   Ocultando modelo principal');
+    if (modeloPrincipal) modeloPrincipal.setAttribute('visible', 'false');
+    if (estadioEl) estadioEl.setAttribute('visible', 'false');
+    if (copaEl) copaEl.setAttribute('visible', 'false');
+
+    // Pantalla actual real
+    let currentScreenType = 'selection';
+
+    if (appState.screens && appState.screens.length) {
+        const currentTitle = document.getElementById('screenTitle').textContent;
+        const currentScreen = appState.screens.find(s => s.name === currentTitle);
+        if (currentScreen) currentScreenType = currentScreen.type;
     }
-    if (estadioEl) {
-        estadioEl.setAttribute('visible', 'false');
-        console.log('   Ocultando estadio');
-    }
-    if (copaEl) {
-        copaEl.setAttribute('visible', 'false');
-        console.log('   Ocultando copa');
-    }
-    
-    // Mostrar según la pantalla actual
-    const screenType = document.getElementById('screenTitle').textContent.toLowerCase();
-    
-    if (screenType.includes('estadio')) {
-        if (estadioEl) {
-            estadioEl.setAttribute('visible', 'true');
-            console.log('Mostrando estadio en RA');
-        } else {
-            console.log('No se encontró el estadio');
-        }
-    } else if (screenType.includes('copa')) {
-        if (copaEl) {
-            copaEl.setAttribute('visible', 'true');
-            console.log('Mostrando copa en RA');
-        } else {
-            console.log('No se encontró la copa');
-        }
+
+    if (currentScreenType === 'stadium') {
+        if (estadioEl) estadioEl.setAttribute('visible', 'true');
+    } else if (currentScreenType === 'cup') {
+        if (copaEl) copaEl.setAttribute('visible', 'true');
     } else {
-        // Selección o galería - mostrar modelo principal
-        if (modeloPrincipal) {
-            modeloPrincipal.setAttribute('visible', 'true');
-            console.log('Mostrando modelo principal en RA');
-        }
+        if (modeloPrincipal) modeloPrincipal.setAttribute('visible', 'true');
     }
 }
-
 // ==================================================
 // FUEGOS ARTIFICIALES
 // ==================================================
@@ -1424,7 +1089,7 @@ function startTrivia(questions) {
     if (!questions || !questions.length) return;
     triviaActive = true;
     currentTrivia = { questions, currentQuestion: 0, score: 0, completed: false };
-    document.querySelectorAll('a-marker').forEach(m => m.pause());
+    document.querySelectorAll('[mindar-image-target]').forEach(m => m.pause());
     renderTrivia();
 }
 
@@ -1458,7 +1123,7 @@ function openGallery(media) {
     triviaActive = true;
     currentGallery.media = media;
     currentGallery.currentIndex = 0;
-    document.querySelectorAll('a-marker').forEach(m => m.pause());
+    document.querySelectorAll('[mindar-image-target]').forEach(m => m.pause());
     renderGallery();
 }
 
@@ -1530,7 +1195,7 @@ window.answerTrivia = function(idx) {
 window.closeTrivia = function() {
     document.getElementById('triviaContainer').classList.remove('active');
     triviaActive = false;
-    document.querySelectorAll('a-marker').forEach(m => m.play());
+    document.querySelectorAll('[mindar-image-target]').forEach(m => m.play());
 };
 
 // ==================================================
@@ -1548,7 +1213,13 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('A-Frame escena cargada');
     });
 
-    setTimeout(forceMainCamera, 1000);
+    arScene.addEventListener('renderstart', () => {
+        document.getElementById('debugCameraStatus').textContent = 'MindAR activa';
+        document.getElementById('loading').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('loading').style.display = 'none';
+        }, 500);
+    });
 });
 
 // ==================================================
@@ -1559,52 +1230,75 @@ function setupMarkerEvents() {
         const marker = document.getElementById(cfg.id);
         if (!marker) return;
 
-        marker.addEventListener('markerFound', function () {
+        marker.addEventListener('targetFound', function () {
             if (triviaActive) return;
-            
-            document.querySelectorAll('.ar-model').forEach(m => m.setAttribute('visible', 'false'));
-            
+
+            // Ocultar todos los modelos principales
+            document.querySelectorAll('.ar-model').forEach(m => {
+                m.setAttribute('visible', 'false');
+            });
+
+            // Ocultar modelos únicos
+            const estadioEl = document.getElementById('estadio-unico');
+            const copaEl = document.getElementById('copa-unica');
+            if (estadioEl) estadioEl.setAttribute('visible', 'false');
+            if (copaEl) copaEl.setAttribute('visible', 'false');
+
+            // Mostrar de inmediato el modelo del país detectado
             const model = document.getElementById(`model-${cfg.code}`);
             if (model) {
                 model.setAttribute('visible', 'true');
                 model.setAttribute('rotation', '0 0 0');
-                
+
                 cargarBanderaAlModelo(model, cfg.code);
                 mejorarMateriales(model);
-                
-                // REPRODUCIR ANIMACIONES
                 reproducirAnimaciones(model);
             }
 
             activeMarkerEl = marker;
 
-            // Cargar estadio y copa (solo la primera vez que se necesitan)
+            // Precarga opcional de estadio y copa
             cargarEstadio(cfg.code);
             cargarCopa(cfg.code);
 
-            setState({ code: cfg.code, name: cfg.name, color: cfg.color,
-                       screens: cfg.screens.length ? cfg.screens : null });
+            // Actualizar estado
+            setState({
+                code: cfg.code,
+                name: cfg.name,
+                color: cfg.color,
+                screens: cfg.screens?.length ? cfg.screens : null
+            });
+
             document.getElementById('debugMarkerStatus').textContent = cfg.code + ' detectado';
-            document.getElementById('debugState').textContent        = cfg.code;
-            
-            // Actualizar visibilidad según pantalla actual
-            setTimeout(actualizarVisibilidadPorPantalla, 500);
+            document.getElementById('debugState').textContent = cfg.code;
+
+            // Mostrar inmediatamente según pantalla actual
+            actualizarVisibilidadPorPantalla();
         });
 
-        marker.addEventListener('markerLost', function () {
+        marker.addEventListener('targetLost', function () {
             if (triviaActive) return;
+
             const model = document.getElementById(`model-${cfg.code}`);
             if (model) model.setAttribute('visible', 'false');
+
+            const estadioEl = document.getElementById('estadio-unico');
+            const copaEl = document.getElementById('copa-unica');
+            if (estadioEl) estadioEl.setAttribute('visible', 'false');
+            if (copaEl) copaEl.setAttribute('visible', 'false');
+
             activeMarkerEl = null;
 
+            // Revisar si todavía hay algún target visible
             const anyVisible = MARKERS_CONFIG.some(c => {
                 const m = document.getElementById(c.id);
-                return m && m.object3D.visible;
+                return m && m.object3D && m.object3D.visible;
             });
+
             if (!anyVisible) {
                 setState(null);
                 document.getElementById('debugMarkerStatus').textContent = 'No detectado';
-                document.getElementById('debugState').textContent        = 'Ninguno';
+                document.getElementById('debugState').textContent = 'Ninguno';
             }
         });
     });
@@ -1623,38 +1317,6 @@ function setupSeedSelector() {
             activeSeed = ColorSeed[btn.dataset.seed] || ColorSeed.RAINBOW;
         });
     });
-}
-
-// ==================================================
-// CAMARA PRINCIPAL
-// ==================================================
-function forceMainCamera() {
-    if (!navigator.mediaDevices) return;
-
-    const constraints = {
-        video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false
-    };
-
-    navigator.mediaDevices.getUserMedia(constraints)
-        .then(stream => {
-            const vid = document.querySelector('video');
-            if (vid) vid.srcObject = stream;
-            document.getElementById('debugCameraStatus').textContent = 'Principal';
-            setTimeout(() => {
-                document.getElementById('loading').style.opacity = '0';
-                setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
-            }, 1000);
-        })
-        .catch(() => {
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
-                .then(stream => {
-                    const vid = document.querySelector('video');
-                    if (vid) vid.srcObject = stream;
-                    document.getElementById('loading').style.display = 'none';
-                })
-                .catch(() => showError('No se pudo acceder a la camara'));
-        });
 }
 
 // ==================================================
@@ -1747,9 +1409,11 @@ function setupUI() {
         switch (screen.type) {
             case 'selection':
                 overlay.innerHTML = `<h2>${currentState.name}</h2><p>${screen.content}</p>`;
-                actionBtn1.textContent = 'Iniciar'; actionBtn2.textContent = 'Info';
+                actionBtn1.textContent = 'Iniciar';
+                actionBtn2.textContent = 'Info';
+
                 actionBtn1.onclick = () => showPopup(`Iniciando ${currentState.code}`);
-                actionBtn2.onclick = () => showPopup(`Info de ${currentState.name}`);
+                actionBtn2.onclick = () => goToCountryInfo(currentState.code);
                 break;
             case 'gallery':
                 overlay.innerHTML = `<h2>Galería ${currentState.name}</h2><p>${screen.content}</p>`;
@@ -1859,7 +1523,7 @@ function setupKeyboardControls() {
             const idx = parseInt(e.key) - 1;
             if (idx < MARKERS_CONFIG.length) {
                 const m = document.getElementById(MARKERS_CONFIG[idx].id);
-                if (m) m.dispatchEvent(new CustomEvent('markerFound'));
+                if (m) m.dispatchEvent(new CustomEvent('targetFound'));
             }
         }
     });
@@ -1874,6 +1538,10 @@ function showError(msg) {
     document.getElementById('loading').style.display = 'none';
 }
 
+function goToCountryInfo(countryCode) {
+    if (!countryCode) return;
+    window.location.href = `./info.html?pais=${encodeURIComponent(countryCode)}`;
+}
 window.getState          = getState;
 window.setState          = setState;
 window.MARKERS_CONFIG    = MARKERS_CONFIG;
