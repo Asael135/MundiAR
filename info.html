@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Información del país</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
+  </head>
+  <body style="background-color: #060914">
+    <main class="container-fluid min-vh-100 text-light py-4 py-md-5">
+      <div class="row justify-content-center">
+        <div class="col-12 col-sm-11 col-md-8 col-lg-5 col-xl-4">
+          <div class="d-flex justify-content-start mb-4">
+            <button
+              id="backBtn"
+              type="button"
+              class="btn btn-danger rounded-pill fw-semibold px-4 py-2 shadow"
+            >
+              Regresar
+            </button>
+          </div>
+
+          <section id="countryInfo" class="text-center">
+            <h1 id="countryName" class="display-5 fw-semibold mb-4">México</h1>
+
+            <div class="mb-4 text-center">
+              <img
+                id="countryFlag"
+                src="./assets/MEX/image.jpg"
+                alt="Bandera del país"
+                class="img-fluid rounded-circle shadow object-fit-cover"
+                style="width: 250px; aspect-ratio: 1 / 1"
+              />
+            </div>
+
+            <section class="px-2 px-md-4 mb-5">
+              <h2 class="fw-semibold mb-3">Información</h2>
+              <p id="countryDescription" class="fs-5 lh-lg mb-0">
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Earum,
+                veritatis assumenda.
+              </p>
+            </section>
+
+            <section class="mb-5">
+              <div
+                id="countryCarousel"
+                class="carousel slide"
+                data-bs-ride="false"
+              >
+                <div class="carousel-indicators">
+                  <button
+                    type="button"
+                    data-bs-target="#countryCarousel"
+                    data-bs-slide-to="0"
+                    class="active"
+                    aria-current="true"
+                    aria-label="Slide 1"
+                  ></button>
+                  <button
+                    type="button"
+                    data-bs-target="#countryCarousel"
+                    data-bs-slide-to="1"
+                    aria-label="Slide 2"
+                  ></button>
+                  <button
+                    type="button"
+                    data-bs-target="#countryCarousel"
+                    data-bs-slide-to="2"
+                    aria-label="Slide 3"
+                  ></button>
+                </div>
+
+                <div
+                  class="carousel-inner rounded-4 shadow overflow-hidden bg-black"
+                >
+                  <div class="carousel-item active">
+                    <div class="ratio ratio-16x9">
+                      <img
+                        id="carouselImg1"
+                        src="./assets/MEX/image.jpg"
+                        class="d-block w-100 object-fit-cover"
+                        alt="Media 1 del país"
+                      />
+                      <iframe
+                        id="carouselVideo1"
+                        class="d-none w-100 object-fit-cover"
+                        src=""
+                        allow="
+                          accelerometer;
+                          autoplay;
+                          clipboard-write;
+                          encrypted-media;
+                          gyroscope;
+                          picture-in-picture;
+                          web-share;
+                        "
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allowfullscreen
+                      >
+                        <source src="" type="video/mp4" />
+                      </iframe>
+                    </div>
+                  </div>
+
+                  <div class="carousel-item">
+                    <div class="ratio ratio-16x9">
+                      <img
+                        id="carouselImg2"
+                        src="./assets/ARG/image.jpg"
+                        class="d-block w-100 object-fit-cover"
+                        alt="Media 2 del país"
+                      />
+                      <iframe
+                        id="carouselVideo2"
+                        class="d-none w-100 object-fit-cover"
+                        src=""
+                        title="Video 1 del país"
+                        allow="
+                          accelerometer;
+                          autoplay;
+                          clipboard-write;
+                          encrypted-media;
+                          gyroscope;
+                          picture-in-picture;
+                          web-share;
+                        "
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allowfullscreen
+                      >
+                        <source src="" type="video/mp4" />
+                      </iframe>
+                    </div>
+                  </div>
+
+                  <div class="carousel-item">
+                    <div class="ratio ratio-16x9">
+                      <img
+                        id="carouselImg3"
+                        src="./assets/COL/image.jpg"
+                        class="d-block w-100 object-fit-cover"
+                        alt="Media 3 del país"
+                      />
+                      <iframe
+                        id="carouselVideo3"
+                        class="d-none w-100 object-fit-cover"
+                        src=""
+                        title="Video 1 del país"
+                        allow="
+                          accelerometer;
+                          autoplay;
+                          clipboard-write;
+                          encrypted-media;
+                          gyroscope;
+                          picture-in-picture;
+                          web-share;
+                        "
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allowfullscreen
+                      >
+                        <source src="" type="video/mp4" />
+                      </iframe>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  class="carousel-control-prev"
+                  type="button"
+                  data-bs-target="#countryCarousel"
+                  data-bs-slide="prev"
+                >
+                  <span
+                    class="carousel-control-prev-icon"
+                    aria-hidden="true"
+                  ></span>
+                  <span class="visually-hidden">Previous</span>
+                </button>
+
+                <button
+                  class="carousel-control-next"
+                  type="button"
+                  data-bs-target="#countryCarousel"
+                  data-bs-slide="next"
+                >
+                  <span
+                    class="carousel-control-next-icon"
+                    aria-hidden="true"
+                  ></span>
+                  <span class="visually-hidden">Next</span>
+                </button>
+              </div>
+            </section>
+          </section>
+
+          <section id="notFound" class="text-center py-5" hidden>
+            <h1 class="display-6 fw-semibold mb-3">País no encontrado</h1>
+            <p class="text-secondary mb-4">
+              El parámetro recibido no corresponde a un país válido.
+            </p>
+            <button
+              type="button"
+              class="btn btn-danger rounded-pill px-4"
+              onclick="window.history.back()"
+            >
+              ← Regresar
+            </button>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const PAISES_CONFIG = {
+        ARG: {
+          nombre: "Argentina",
+          bandera: "./assets/ARG/image.jpg",
+          descripcion:
+            "Tricampeona del mundo (1978, 1986, 2022). Cuna de leyendas como Maradona y Messi, la albiceleste es sinónimo de pasión técnica y garra competitiva en cada cita mundialista.",
+          galeria: [
+            { type: "image", src: "./assets/ARG/image1.webp" },
+            {
+              type: "youtube",
+              src: "https://www.youtube.com/embed/kDQrpttTxyI",
+            },
+            { type: "image", src: "./assets/ARG/image2.webp" },
+          ],
+        },
+        COL: {
+          nombre: "Colombia",
+          bandera: "./assets/COL/image.jpg",
+          descripcion:
+            "Con seis participaciones mundialistas, destaca su histórica actuación en Brasil 2014 llegando a cuartos de final. Reconocida por su fútbol alegre, vistoso y su icónica generación de los 90.",
+          galeria: [
+            { type: "image", src: "./assets/COL/image2.jpg" },
+            {
+              type: "youtube",
+              src: "https://www.youtube.com/embed/rq6_kDkvwew",
+            },
+            { type: "image", src: "./assets/COL/image1.webp" },
+          ],
+        },
+        ESP: {
+          nombre: "España",
+          bandera: "./assets/ESP/image.jpg",
+          descripcion:
+            'Campeona en Sudáfrica 2010. "La Roja" revolucionó el fútbol con su estilo de posesión (Tiki-taka), logrando una hegemonía histórica entre 2008 y 2012 que culminó con la estrella mundial.',
+          galeria: [
+            { type: "image", src: "./assets/ESP/image1.webp" },
+            {
+              type: "youtube",
+              src: "https://www.youtube.com/embed/dLqLUS6vGqw",
+            },
+            { type: "image", src: "./assets/ESP/image2.webp" },
+          ],
+        },
+        FRA: {
+          nombre: "Francia",
+          bandera: "./assets/FRA/image.jpg",
+          descripcion:
+            'Bicampeona mundial (1998, 2018). "Les Bleus" se caracterizan por una potencia física envidiable y una formación de talento joven que los mantiene en la élite del fútbol global constantemente.',
+          galeria: [
+            { type: "image", src: "./assets/FRA/image1.jpg" },
+            {
+              type: "youtube",
+              src: "https://youtube.com/embed/FlE245pqtpk",
+            },
+            { type: "image", src: "./assets/FRA/image2.webp" },
+          ],
+        },
+        JPN: {
+          nombre: "Japón",
+          bandera: "./assets/JPN/image.jpg",
+          descripcion:
+            'La potencia más consistente de Asia. Conocidos como los "Samuráis Azules", destacan por su disciplina táctica, velocidad y por haber alcanzado los octavos de final en varias ocasiones recientes.',
+          galeria: [
+            { type: "image", src: "./assets/JPN/image1.jpg" },
+            {
+              type: "youtube",
+              src: "https://www.youtube.com/embed/3tbdEC6FCDs",
+            },
+            { type: "image", src: "./assets/JPN/image2.webp" },
+          ],
+        },
+        KOR: {
+          nombre: "Corea del Sur",
+          bandera: "./assets/KOR/image.jpg",
+          descripcion:
+            "Hizo historia en 2002 logrando el cuarto lugar, la mejor posición para un equipo asiático. Son famosos por su incansable despliegue físico y su espíritu de lucha hasta el último minuto.",
+          galeria: [
+            { type: "image", src: "./assets/KOR/image1.webp" },
+            {
+              type: "youtube",
+              src: "https://www.youtube.com/embed/gewILgS9cFo",
+            },
+            { type: "image", src: "./assets/KOR/image2.jpg" },
+          ],
+        },
+        MEX: {
+          nombre: "México",
+          bandera: "./assets/MEX/image.jpg",
+          descripcion:
+            "Un gigante de la CONCACAF con 17 apariciones. Anfitrión de dos Mundiales (1970, 1986), es célebre por su fiel afición y por avanzar consistentemente de la fase de grupos durante décadas.",
+          galeria: [
+            { type: "image", src: "./assets/MEX/image1.webp" },
+            {
+              type: "youtube",
+              src: "https://www.youtube.com/embed/at8s4BE3SiY",
+            },
+            { type: "image", src: "./assets/MEX/image2.webp" },
+          ],
+        },
+        POR: {
+          nombre: "Portugal",
+          bandera: "./assets/POR/image.jpg",
+          descripcion:
+            "Liderada históricamente por figuras como Eusébio y Cristiano Ronaldo. Su mejor marca fue el tercer puesto en 1966. Es un equipo técnico que siempre compite al más alto nivel europeo.",
+          galeria: [
+            { type: "image", src: "./assets/POR/image1.jpg" },
+            {
+              type: "youtube",
+              src: "https://www.youtube.com/embed/3HoMwK72h2c",
+            },
+            { type: "image", src: "./assets/POR/image2.jpg" },
+          ],
+        },
+        TUN: {
+          nombre: "Túnez",
+          bandera: "./assets/TUN/image.jpg",
+          descripcion:
+            'Las "Águilas de Cartago" fueron el primer equipo africano en ganar un partido en un Mundial (1978). Representan el orgullo del fútbol magrebí con una defensa sólida y ordenada.',
+          galeria: [
+            { type: "image", src: "./assets/TUN/image1.jpg" },
+            {
+              type: "youtube",
+              src: "https://www.youtube.com/embed/LXUGIah424k",
+            },
+            { type: "image", src: "./assets/TUN/image2.webp" },
+          ],
+        },
+        URY: {
+          nombre: "Uruguay",
+          bandera: "./assets/URY/image.jpg",
+          descripcion:
+            'Primer campeón mundial (1930) y protagonista del inolvidable "Maracanazo" en 1950. Un país pequeño en territorio pero gigante en historia, definido por la legendaria "Garra Charrúa".',
+          galeria: [
+            { type: "image", src: "./assets/URY/image1.jpg" },
+            {
+              type: "youtube",
+              src: "https://www.youtube.com/embed/b97rXmJ9yVw",
+            },
+            { type: "image", src: "./assets/URY/image2.jpg" },
+          ],
+        },
+      };
+      function getCountryCodeFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        return (params.get("pais") || "").toUpperCase().trim();
+      }
+
+      function setCarouselMedia(slot, media, countryName) {
+        const img = document.getElementById(`carouselImg${slot}`);
+        const iframe = document.getElementById(`carouselVideo${slot}`);
+
+        // 1. Si es imagen o no hay datos
+        if (!media || media.type === "image") {
+          img.src = media ? media.src : `./assets/${countryName}/image.jpg`;
+          img.classList.remove("d-none");
+          iframe.classList.add("d-none");
+          iframe.src = "";
+          return;
+        }
+
+        // 2. Si es Video o Youtube (aceptamos ambos términos por si acaso)
+        if (media.type === "video" || media.type === "youtube") {
+          let videoUrl = media.src;
+
+          if (!videoUrl || videoUrl === "") {
+            // Si el link está vacío, mostramos la bandera para que no se vea negro
+            img.src = document.getElementById("countryFlag").src;
+            img.classList.remove("d-none");
+            iframe.classList.add("d-none");
+            return;
+          }
+
+          // CONVERSIÓN CRÍTICA: De link normal a link de inserción (embed)
+          if (videoUrl.includes("watch?v=")) {
+            videoUrl = videoUrl.replace("watch?v=", "embed/");
+          } else if (videoUrl.includes("youtu.be/")) {
+            videoUrl = videoUrl.replace("youtu.be/", "youtube.com/embed/");
+          }
+
+          // Quitamos parámetros extra que ensucian el link y activamos la API
+          videoUrl = videoUrl.split("&")[0];
+          iframe.src = `${videoUrl}?enablejsapi=1&rel=0`;
+
+          img.classList.add("d-none");
+          iframe.classList.remove("d-none");
+        }
+      }
+      function pauseAllCarouselVideos() {
+        const iframes = document.querySelectorAll("#countryCarousel iframe");
+        iframes.forEach((iframe) => {
+          if (iframe.src && iframe.src.includes("youtube.com")) {
+            // Envía un comando interno a YouTube para pausar sin recargar la página
+            iframe.contentWindow.postMessage(
+              '{"event":"command","func":"pauseVideo","args":""}',
+              "*",
+            );
+          }
+        });
+      }
+
+      function renderCountryInfo() {
+        const code = getCountryCodeFromUrl();
+        const country = PAISES_CONFIG[code];
+
+        const countryInfo = document.getElementById("countryInfo");
+        const notFound = document.getElementById("notFound");
+
+        if (!country) {
+          countryInfo.hidden = true;
+          notFound.hidden = false;
+          return;
+        }
+
+        document.getElementById("countryName").textContent = country.nombre;
+        document.getElementById("countryFlag").src = country.bandera;
+        document.getElementById("countryFlag").alt =
+          `Bandera de ${country.nombre}`;
+        document.getElementById("countryDescription").textContent =
+          country.descripcion || "Sin descripción disponible.";
+
+        const gallery = country.galeria || [
+          { type: "image", src: country.bandera },
+          {
+            type: "youtube",
+            src: "https://www.youtube.com/watch?v=D9o3OQJ5X-s",
+          },
+          { type: "image", src: country.bandera },
+        ];
+
+        setCarouselMedia(1, gallery[0], country.nombre);
+        setCarouselMedia(2, gallery[1], country.nombre);
+        setCarouselMedia(3, gallery[2], country.nombre);
+      }
+
+      document.getElementById("backBtn").addEventListener("click", () => {
+        window.history.back();
+      });
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderCountryInfo();
+
+        const carouselElement = document.getElementById("countryCarousel");
+        if (carouselElement) {
+          carouselElement.addEventListener("slide.bs.carousel", () => {
+            pauseAllCarouselVideos();
+          });
+        }
+      });
+
+      function pauseAllCarouselVideos() {
+        const iframes = document.querySelectorAll("#countryCarousel iframe");
+
+        iframes.forEach((iframe) => {
+          const currentSrc = iframe.src;
+          iframe.src = "";
+          iframe.src = currentSrc;
+        });
+      }
+    </script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>
