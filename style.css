@@ -38,11 +38,53 @@ body {
 }
 
 .scan-box {
+  position: relative;
   width: 220px;
   height: 220px;
   border: 3px solid var(--accent);
   border-radius: 20px;
+  overflow: hidden;
   animation: pulse 2s infinite;
+}
+
+/* Barrido lateral (luz que se mueve) */
+.scan-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(178, 255, 36, 0.2), transparent);
+  animation: scanLine 1.8s linear infinite;
+  pointer-events: none;
+}
+
+/* Línea horizontal que simula escaneo */
+.scan-box::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #b2ff24;
+  box-shadow: 0 0 10px #b2ff24;
+  transform: translateY(-50%);
+  animation: sweep 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes scanLine {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+@keyframes sweep {
+  0% { left: -100%; opacity: 1; }
+  50% { left: 100%; opacity: 1; }
+  51% { left: -100%; opacity: 0; }
+  100% { left: -100%; opacity: 0; }
 }
 .scan-text {
   margin-top: 20px;
@@ -808,4 +850,204 @@ canvas {
   height: 100% !important;
   left: 0 !important;
   top: 0 !important;
+}
+
+
+/* ===== LOADER MEJORADO CON EFECTO DE ESCANEO ===== */
+#loading {
+  background: radial-gradient(circle at center, #0a0f1e, #03060c);
+  transition: opacity 0.5s;
+}
+
+.loader {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  border: 2px solid rgba(178, 255, 36, 0.3);
+  box-shadow: 0 0 20px rgba(178, 255, 36, 0.2);
+  margin: 0 auto 20px;
+  overflow: hidden;
+}
+
+/* Barrido lateral (luz que se mueve) */
+.loader::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(178, 255, 36, 0.2), transparent);
+  animation: scanLine 1.8s linear infinite;
+}
+
+/* Línea horizontal que simula escaneo */
+.loader::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #b2ff24;
+  box-shadow: 0 0 10px #b2ff24;
+  transform: translateY(-50%);
+  animation: sweep 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes scanLine {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+@keyframes sweep {
+  0% { left: -100%; opacity: 1; }
+  50% { left: 100%; opacity: 1; }
+  51% { left: -100%; opacity: 0; }
+  100% { left: -100%; opacity: 0; }
+}
+
+/* Botón de información dentro del cargador */
+.info-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid var(--accent, #b2ff24);
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+  font-weight: bold;
+  color: var(--accent, #b2ff24);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.info-btn:hover {
+  transform: scale(1.05);
+  background: var(--accent, #b2ff24);
+  color: #000;
+}
+
+
+.modal-instructions {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  visibility: hidden;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.modal-instructions.active {
+  visibility: visible;
+  opacity: 1;
+}
+
+.modal-inner {
+  background: #11161f;
+  border-radius: 28px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--accent, #b2ff24);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #2a2f3a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: var(--accent, #b2ff24);
+  font-size: 1.5rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.modal-content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #eee;
+}
+
+.modal-content p {
+  margin: 12px 0;
+}
+
+.modal-content ul {
+  padding-left: 20px;
+}
+
+.modal-content li {
+  margin: 8px 0;
+}
+
+
+/* Contenedor de botones de acción (fuegos + animación) */
+.action-buttons {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  gap: 12px;
+  z-index: 25;
+}
+.action-btn {
+  background: var(--accent);
+  border: none;
+  padding: 10px 15px;
+  border-radius: 30px;
+  font-size: 14px;
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+@media (min-width: 768px) {
+  .action-btn {
+    padding: 12px 20px;
+    font-size: 15px;
+  }
+}
+.action-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px var(--accent);
+}
+.action-btn:active {
+  transform: scale(0.95);
 }
