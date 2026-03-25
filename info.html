@@ -215,6 +215,42 @@
     </main>
 
     <script>
+  // ... (resto de PAISES_CONFIG, etc.) ...
+
+  // Función de regreso mejorada
+  function goBack() {
+    // Primero intentamos usar history.back()
+    if (document.referrer && document.referrer.length > 0) {
+      window.history.back();
+      // Como fallback, si después de 300ms la página no ha cambiado, redirigimos
+      setTimeout(() => {
+        // Si la URL sigue siendo la misma, asumimos que history.back() falló
+        if (window.location.href === window.location.href) {
+          window.location.href = './index.html';
+        }
+      }, 300);
+    } else {
+      // No hay referrer, redirigir directamente
+      window.location.href = './index.html';
+    }
+  }
+
+  // Asignar el evento al botón (asegurarse de que el elemento existe)
+  document.addEventListener('DOMContentLoaded', () => {
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) {
+      backBtn.addEventListener('click', goBack);
+    }
+
+    // También puedes asignar el evento al botón de la sección "País no encontrado"
+    const notFoundBackBtn = document.querySelector('#notFound button');
+    if (notFoundBackBtn) {
+      notFoundBackBtn.onclick = goBack;
+    }
+  });
+</script>
+
+    <script>
       const PAISES_CONFIG = {
         ARG: {
           nombre: "Argentina",
